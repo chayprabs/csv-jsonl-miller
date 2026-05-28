@@ -57,3 +57,5 @@ export const SAMPLE_SPECS: SampleSpec[] = [
     filename: 'wide-sales.csv',
   },
 ];
+
+export * from './input';
