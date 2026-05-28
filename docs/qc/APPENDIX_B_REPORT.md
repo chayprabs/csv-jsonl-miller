@@ -44,10 +44,11 @@ Acceptance evidence:
 Blocked:
 - 21.0 Hosted web URL now exists and returned `200` at `https://chayprabs.github.io/csv-jsonl-miller/`, and the latest `main` runs for `CI`, `Deploy Pages`, and `Publish Worker Image` all succeeded on commit `8936ed5`.
   A hosted worker URL is still not provisioned, so this item remains blocked.
-- 21.1 Browser Miller-WASM evidence is still missing.
+- 21.1 Browser Miller-WASM integration is still blocked.
   Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which runs supported DuckDB-WASM chains over the ecommerce CSV, access-log JSONL, and wide-sales CSV samples and records the results in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
   Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
+  `pnpm probe:miller-wasm` now records a direct upstream `GOOS=js GOARCH=wasm` probe in `docs/qc/benchmarks/browser-miller-wasm-probe.json`; at the current Miller version, Go fails the build in the generated parser with `function too big ... exceeds 65536 blocks`, so there is still no usable browser Miller artifact to verify.
 - 21.13 Privacy evidence is now local-only rather than hosted.
   Browser-first privacy evidence is now available both locally and on the hosted app.
   `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, and `pnpm --filter @csvshape/web privacy:smoke` against `https://chayprabs.github.io/csv-jsonl-miller/` produces `docs/qc/benchmarks/browser-privacy-hosted.json`; both show no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.

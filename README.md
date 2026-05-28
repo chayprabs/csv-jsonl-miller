@@ -47,6 +47,7 @@ pnpm bench:browser
 pnpm bench:worker
 pnpm audit:lighthouse
 pnpm audit:privacy
+pnpm probe:miller-wasm
 pnpm --filter @csvshape/web smoke:duckdb
 pnpm --filter @csvshape/worker smoke:mlr
 docker compose up --build
@@ -54,7 +55,7 @@ docker compose up --build
 
 The local worker defaults to `http://localhost:8797`.
 
-Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, the worker throughput gate passes, the static app is live on GitHub Pages, and hosted browser-first privacy smoke now passes. Remaining blockers are hosted worker evidence, browser Miller-WASM evidence, package/registry evidence, and final Section 21 closure.
+Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, the worker throughput gate passes, the static app is live on GitHub Pages, and hosted browser-first privacy smoke now passes. A repeatable `pnpm probe:miller-wasm` check now records the current upstream browser Miller path as blocked by a Go `js/wasm` compiler limit in `docs/qc/benchmarks/browser-miller-wasm-probe.json`. Remaining blockers are hosted worker evidence, a working browser Miller-WASM path, package/registry evidence, and final Section 21 closure.
 
 ## Release targets
 

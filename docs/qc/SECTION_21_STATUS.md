@@ -37,7 +37,8 @@ It is not yet a qualified release record.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
   Browser DuckDB-WASM is exercised locally across the acceptance samples via `pnpm --filter @csvshape/web smoke:duckdb`, with artifact output in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
   Worker-native DuckDB execution is covered by local tests, and worker-native Miller now has a repeatable local smoke run via `pnpm --filter @csvshape/worker smoke:mlr` with artifact output in `docs/qc/benchmarks/native-mlr-smoke.json`.
-  Browser Miller-WASM evidence is still missing.
+  `pnpm probe:miller-wasm` now records a repeatable upstream browser probe in `docs/qc/benchmarks/browser-miller-wasm-probe.json`; the current direct `GOOS=js GOARCH=wasm` build fails inside Miller's generated parser with `function too big ... exceeds 65536 blocks`.
+  Browser Miller-WASM integration evidence is still missing because that upstream build path does not currently produce a usable browser artifact.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.
   Browser 100k-row p95 now measures `377.26 ms` via the production-preview benchmark in `docs/qc/benchmarks/browser-duckdb.json`, which clears the `<= 1000 ms` gate.
   Worker native DuckDB clears the 100M-row threshold at `1057.87 ms` via `docs/qc/benchmarks/worker-duckdb.json`.

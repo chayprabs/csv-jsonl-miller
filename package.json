@@ -16,6 +16,7 @@
     "dev": "pnpm --filter @csvshape/web dev",
     "dev:worker": "pnpm --filter @csvshape/worker dev",
     "audit:privacy": "node scripts/run-privacy-check.mjs",
+    "probe:miller-wasm": "node scripts/probe-miller-wasm.mjs",
     "lint": "pnpm --filter @csvshape/core --filter @csvshape/web --filter @csvshape/worker lint",
     "test": "pnpm --filter @csvshape/core --filter @csvshape/web --filter @csvshape/worker test",
     "typecheck": "pnpm --filter @csvshape/core --filter @csvshape/web --filter @csvshape/worker typecheck",
