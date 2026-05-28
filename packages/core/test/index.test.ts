@@ -3,10 +3,14 @@ import { describe, expect, it } from 'vitest';
 import {
   applyJsonQuery,
   applyReshape,
+  buildReplayableChainScript,
+  decodeReplayState,
   detectEncoding,
+  encodeReplayState,
   executeVerbChain,
   inspectInput,
   SAMPLE_SPECS,
+  serializeRows,
   sniffDialect,
   type VerbChain,
 } from '../src/index';
@@ -180,5 +184,43 @@ describe('sample registry', () => {
     expect(longer.preview.rows[0]).toEqual({ region: 'north', month: 'jan', sales: '120' });
     expect(wider.preview.rows[1]).toEqual({ region: 'south', jan: '98', feb: '111' });
     expect(exploded.preview.rows).toEqual([{ id: '1', tags: 'auth' }, { id: '1', tags: 'error' }]);
+  });
+
+  it('serializes exports and replay state', () => {
+    const rows = [{ order_id: 1001, status: 'paid' }];
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'orders.csv' }],
+      verbs: [{ kind: 'cut', opts: { fields: 'order_id,status' } }],
+      output: { format: 'csv' },
+    };
+    const replay = {
+      selectedSourceName: 'orders.csv',
+      jsonQuery: '.',
+      reshape: {
+        mode: 'none' as const,
+        fields: '',
+        namesTo: '',
+        valuesTo: '',
+        namesFrom: '',
+        valuesFrom: '',
+        groupBy: '',
+        field: '',
+      },
+      chain: [
+        {
+          id: '1',
+          kind: 'cut',
+          mode: 'form' as const,
+          opts: { fields: 'order_id,status' },
+          rawExpression: '',
+        },
+      ],
+      outputFormat: 'csv' as const,
+    };
+
+    expect(serializeRows(rows, 'csv')).toContain('order_id,status');
+    expect(serializeRows(rows, 'jsonl')).toContain('"status":"paid"');
+    expect(buildReplayableChainScript(chain)).toContain('1. cut');
+    expect(decodeReplayState(encodeReplayState(replay))).toEqual(replay);
   });
 });

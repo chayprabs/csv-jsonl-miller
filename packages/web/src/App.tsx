@@ -2,17 +2,21 @@ import {
   applyJsonQuery,
   applyReshape,
   buildDelimitedPreview,
+  buildReplayableChainScript,
+  decodeReplayState,
   decodeInput,
   detectEncoding,
+  encodeReplayState,
   executeVerbChain,
   inspectInput,
   SAMPLE_SPECS,
+  serializeRows,
   type DialectDetection,
   type FileFormat,
   type InputInspection,
   type VerbChain,
 } from '@csvshape/core';
-import { startTransition, useDeferredValue, useMemo, useRef, useState } from 'react';
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
@@ -45,6 +49,17 @@ interface ReshapeState {
   groupBy: string;
   field: string;
 }
+
+const INITIAL_RESHAPE: ReshapeState = {
+  mode: 'none',
+  fields: 'jan,feb,mar',
+  namesTo: 'month',
+  valuesTo: 'value',
+  namesFrom: 'month',
+  valuesFrom: 'value',
+  groupBy: 'region',
+  field: 'tags',
+};
 
 const WORKER_BASE_URL = import.meta.env.VITE_WORKER_BASE_URL ?? 'http://localhost:8787';
 
@@ -86,31 +101,87 @@ function withHeaderOverride(source: LoadedSource, hasHeader: boolean): LoadedSou
   };
 }
 
+function fileExtension(format: FileFormat): string {
+  switch (format) {
+    case 'jsonl':
+    case 'ndjson':
+      return 'jsonl';
+    case 'parquet':
+      return 'parquet.json';
+    default:
+      return format;
+  }
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [sources, setSources] = useState<LoadedSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [pendingReplaySourceName, setPendingReplaySourceName] = useState<string | null>(null);
   const [workerUrl, setWorkerUrl] = useState('');
   const [workerMessage, setWorkerMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chain, setChain] = useState<ChainStep[]>([]);
   const [jsonQuery, setJsonQuery] = useState('select(.status == 500) | {user_id:.user_id,status:.status}');
-  const [reshape, setReshape] = useState<ReshapeState>({
-    mode: 'none',
-    fields: 'jan,feb,mar',
-    namesTo: 'month',
-    valuesTo: 'value',
-    namesFrom: 'month',
-    valuesFrom: 'value',
-    groupBy: 'region',
-    field: 'tags',
-  });
+  const [reshape, setReshape] = useState<ReshapeState>(INITIAL_RESHAPE);
+  const [outputFormat, setOutputFormat] = useState<FileFormat>('csv');
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
   const deferredSource = useDeferredValue(selectedSource);
   const deferredChain = useDeferredValue(chain);
   const deferredJsonQuery = useDeferredValue(jsonQuery);
+
+  useEffect(() => {
+    const encoded = new URLSearchParams(window.location.search).get('chain');
+
+    if (!encoded) {
+      return;
+    }
+
+    const replay = decodeReplayState(encoded);
+
+    if (!replay) {
+      return;
+    }
+
+    setJsonQuery(replay.jsonQuery);
+    setReshape(replay.reshape);
+    setOutputFormat(replay.outputFormat);
+    setChain(
+      replay.chain.map((step) => ({
+        id: step.id,
+        kind: step.kind as ChainStep['kind'],
+        mode: step.mode,
+        opts: step.opts,
+        rawExpression: step.rawExpression,
+      })),
+    );
+    setPendingReplaySourceName(replay.selectedSourceName ?? null);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingReplaySourceName || sources.length === 0) {
+      return;
+    }
+
+    const match = sources.find((source) => source.name === pendingReplaySourceName);
+
+    if (match) {
+      setSelectedSourceId(match.id);
+      setPendingReplaySourceName(null);
+    }
+  }, [pendingReplaySourceName, sources]);
 
   async function loadBytes(name: string, sourceType: LoadedSource['sourceType'], bytes: Uint8Array) {
     const format = inferFormat(name);
@@ -225,7 +296,7 @@ export function App() {
         opts: step.opts,
         rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
       })),
-      output: { format: primarySource.format },
+      output: { format: outputFormat },
     };
 
     const result = executeVerbChain(
@@ -242,7 +313,7 @@ export function App() {
       ...result,
       warnings: [...result.warnings, ...jsonWarnings],
     };
-  }, [deferredChain, deferredJsonQuery, deferredSource, sources]);
+  }, [deferredChain, deferredJsonQuery, deferredSource, outputFormat, sources]);
 
   const reshaped = useMemo(() => {
     if (!execution) {
@@ -265,6 +336,63 @@ export function App() {
   const previewRows = reshaped?.preview.rows ?? execution?.preview.rows ?? [];
   const previewColumns = reshaped?.preview.columns ?? execution?.preview.columns ?? [];
   const previewWarnings = reshaped?.warnings ?? execution?.warnings ?? [];
+  const exportRows = reshaped?.rows ?? execution?.rows ?? [];
+
+  const chainDefinition = useMemo<VerbChain>(
+    () => ({
+      input: selectedSource ? [{ format: selectedSource.format, ref: selectedSource.name }] : [],
+      verbs: chain.map((step) => ({
+        kind: step.kind,
+        opts: step.opts,
+        rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
+      })),
+      output: { format: outputFormat },
+    }),
+    [chain, outputFormat, selectedSource],
+  );
+
+  const replayUrl = useMemo(() => {
+    const encoded = encodeReplayState({
+      selectedSourceName: selectedSource?.name ?? pendingReplaySourceName,
+      jsonQuery,
+      reshape,
+      chain: chain.map((step) => ({
+        id: step.id,
+        kind: step.kind,
+        mode: step.mode,
+        opts: step.opts,
+        rawExpression: step.rawExpression,
+      })),
+      outputFormat,
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.set('chain', encoded);
+    return url.toString();
+  }, [chain, jsonQuery, outputFormat, pendingReplaySourceName, reshape, selectedSource]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(
+      'chain',
+      encodeReplayState({
+        selectedSourceName: selectedSource?.name ?? pendingReplaySourceName,
+        jsonQuery,
+        reshape,
+        chain: chain.map((step) => ({
+          id: step.id,
+          kind: step.kind,
+          mode: step.mode,
+          opts: step.opts,
+          rawExpression: step.rawExpression,
+        })),
+        outputFormat,
+      }),
+    );
+    window.history.replaceState({}, '', url);
+  }, [chain, jsonQuery, outputFormat, pendingReplaySourceName, reshape, selectedSource]);
+
+  const chainScript = useMemo(() => buildReplayableChainScript(chainDefinition), [chainDefinition]);
+  const exportContent = useMemo(() => serializeRows(exportRows, outputFormat), [exportRows, outputFormat]);
 
   function addVerb(kind: (typeof VERB_PALETTE)[number]) {
     const definition = getVerbDefinition(kind);
@@ -670,8 +798,59 @@ export function App() {
                 </div>
                 <div>
                   <span>Rows</span>
-                  <strong>{previewRows.length}</strong>
+                  <strong>{exportRows.length}</strong>
                 </div>
+              </div>
+
+              <div className="dialect-controls">
+                <label className="field inline-field">
+                  <span>Output format</span>
+                  <select
+                    value={outputFormat}
+                    onChange={(event) => setOutputFormat(event.target.value as FileFormat)}
+                  >
+                    <option value="csv">CSV</option>
+                    <option value="tsv">TSV</option>
+                    <option value="jsonl">NDJSON</option>
+                    <option value="parquet">Parquet</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    downloadTextFile(
+                      `csvshape-output.${fileExtension(outputFormat)}`,
+                      exportContent,
+                      outputFormat === 'jsonl' ? 'application/x-ndjson' : 'text/plain;charset=utf-8',
+                    )
+                  }
+                >
+                  Download data
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    downloadTextFile('csvshape-chain.txt', chainScript, 'text/plain;charset=utf-8')
+                  }
+                >
+                  Download chain script
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(replayUrl);
+                      setWorkerMessage('Replay URL copied to clipboard.');
+                    } catch {
+                      setWorkerMessage('Clipboard access failed; copy the URL from the address bar.');
+                    }
+                  }}
+                >
+                  Copy replay URL
+                </button>
               </div>
 
               {deferredSource.inspection.dialect ? (

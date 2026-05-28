@@ -62,3 +62,5 @@ export * from './input';
 export * from './execution';
 export * from './json-query';
 export * from './reshape';
+export * from './export';
+export * from './replay';
