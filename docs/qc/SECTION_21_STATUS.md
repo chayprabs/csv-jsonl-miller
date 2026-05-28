@@ -50,5 +50,7 @@ It is not yet a qualified release record.
   This item remains open only because the worker retention behavior is still evidenced locally rather than through a hosted worker URL.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
   Pages deployment is live on GitHub Pages, and the worker image publish workflow is green on `main` for recent commits including `e70ac1e` and `4611797`.
-  Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint or npm package evidence.
+  `@csvshape/core` is now package-ready with `dist` exports plus a repeatable `pnpm --filter @csvshape/core pack:check` tarball build, recorded in `docs/qc/benchmarks/core-pack.json`, and the release workflow now uploads that package artifact on tags or manual dispatch.
+  There is still no registry publication evidence from npm or GitHub Packages.
+  Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint.
 - [ ] 21.19 Final all-green verdict.

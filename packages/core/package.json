@@ -2,11 +2,47 @@
   "name": "@csvshape/core",
   "version": "0.1.0",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "description": "Core CSVShape parsing, Miller-style transforms, replay, and export utilities.",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chayprabs/csv-jsonl-miller.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://chayprabs.github.io/csv-jsonl-miller/",
+  "bugs": {
+    "url": "https://github.com/chayprabs/csv-jsonl-miller/issues"
+  },
+  "keywords": [
+    "csv",
+    "tsv",
+    "jsonl",
+    "ndjson",
+    "miller",
+    "data-wrangling",
+    "etl"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test --ext .ts",
+    "pack:check": "node ../../scripts/run-core-pack-check.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },

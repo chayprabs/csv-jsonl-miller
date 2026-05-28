@@ -55,7 +55,9 @@ Blocked:
   Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests assert `Cache-Control: no-store` on those responses.
   This item remains blocked only because there is still no hosted worker URL to verify the retention contract remotely.
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
-  Direct GHCR package inspection is still blocked by the current token lacking `read:packages`, and npm package evidence is still missing.
+  `@csvshape/core` is now package-ready with `dist` exports and a repeatable `pnpm --filter @csvshape/core pack:check` tarball build recorded in `docs/qc/benchmarks/core-pack.json`, and the release workflow now uploads that artifact on tags or manual dispatch.
+  Public registry publication evidence is still missing because this machine is not authenticated to npm and the GitHub token still lacks `read:packages`.
+  A hosted worker endpoint is still missing, so deployment evidence is still incomplete.
 - 21.19 Final qualification blocked on unresolved items above.
 
 Verdict: NOT QUALIFIED
