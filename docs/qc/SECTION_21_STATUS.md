@@ -34,7 +34,7 @@ It is not yet a qualified release record.
   Worker-native DuckDB execution is covered by local tests, and worker-native Miller now has a repeatable local smoke run via `pnpm --filter @csvshape/worker smoke:mlr` with artifact output in `docs/qc/benchmarks/native-mlr-smoke.json`.
   Browser Miller-WASM evidence and per-verb Miller parity evidence are still missing.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.
-  Browser 100k-row p95 currently measures `2076.14 ms` via the production-preview benchmark in `docs/qc/benchmarks/browser-duckdb.json`, which still misses the `<= 1000 ms` gate.
+  Browser 100k-row p95 now measures `377.26 ms` via the production-preview benchmark in `docs/qc/benchmarks/browser-duckdb.json`, which clears the `<= 1000 ms` gate.
   Worker native DuckDB clears the 100M-row threshold at `1057.87 ms` via `docs/qc/benchmarks/worker-duckdb.json`.
   Local Lighthouse preview scores are `performance=100`, `accessibility=100`, `best-practices=100`, and `seo=100` via `docs/qc/benchmarks/lighthouse-summary.json`.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.

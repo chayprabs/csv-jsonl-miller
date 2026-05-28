@@ -18,7 +18,7 @@ import {
   type PreviewTable,
   type VerbChain,
 } from '@csvshape/core';
-import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
@@ -171,6 +171,22 @@ function loadDuckDbBrowserModule() {
   return duckDbBrowserModulePromise;
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [delayMs, value]);
+
+  return debouncedValue;
+}
+
 export function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [sources, setSources] = useState<LoadedSource[]>([]);
@@ -197,9 +213,8 @@ export function App() {
   const [engineMessage, setEngineMessage] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
-  const deferredSource = useDeferredValue(selectedSource);
-  const deferredChain = useDeferredValue(chain);
-  const deferredJsonQuery = useDeferredValue(jsonQuery);
+  const debouncedChain = useDebouncedValue(chain, 180);
+  const debouncedJsonQuery = useDebouncedValue(jsonQuery, 180);
   const routeSeo = useMemo(() => getRouteSeo(window.location.pathname), []);
 
   useEffect(() => {
@@ -377,18 +392,18 @@ export function App() {
   }
 
   const execution = useMemo(() => {
-    if (!deferredSource) {
+    if (!selectedSource) {
       return null;
     }
 
-    let primarySource = deferredSource;
+    let primarySource = selectedSource;
     const jsonWarnings: string[] = [];
 
-    if ((deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') && deferredJsonQuery.trim()) {
-      const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
+    if ((selectedSource.format === 'jsonl' || selectedSource.format === 'ndjson') && debouncedJsonQuery.trim()) {
+      const queried = applyJsonQuery(selectedSource.text, debouncedJsonQuery);
 
       primarySource = {
-        ...deferredSource,
+        ...selectedSource,
         text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
       };
       jsonWarnings.push(...queried.warnings);
@@ -396,7 +411,7 @@ export function App() {
 
     const chainDefinition: VerbChain = {
       input: [{ format: primarySource.format, ref: primarySource.name }],
-      verbs: deferredChain.map((step) => ({
+      verbs: debouncedChain.map((step) => ({
         kind: step.kind,
         opts: step.opts,
         rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
@@ -407,10 +422,10 @@ export function App() {
     const result = executeVerbChain(
       chainDefinition,
       sources.map((source) => ({
-        name: source.id === deferredSource.id ? primarySource.name : source.name,
-        format: source.id === deferredSource.id ? primarySource.format : source.format,
-        text: source.id === deferredSource.id ? primarySource.text : source.text,
-        dialect: source.id === deferredSource.id ? null : source.inspection.dialect,
+        name: source.id === selectedSource.id ? primarySource.name : source.name,
+        format: source.id === selectedSource.id ? primarySource.format : source.format,
+        text: source.id === selectedSource.id ? primarySource.text : source.text,
+        dialect: source.id === selectedSource.id ? null : source.inspection.dialect,
       })),
     );
 
@@ -418,12 +433,12 @@ export function App() {
       ...result,
       warnings: [...result.warnings, ...jsonWarnings],
     };
-  }, [deferredChain, deferredJsonQuery, deferredSource, outputFormat, sources]);
+  }, [debouncedChain, debouncedJsonQuery, outputFormat, selectedSource, sources]);
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!deferredSource) {
+    if (!selectedSource) {
       setDuckDbExecution(null);
       setExecutionEngine('typescript');
       setEngineMessage(null);
@@ -432,14 +447,14 @@ export function App() {
       };
     }
 
-    let primarySource = deferredSource;
+    let primarySource = selectedSource;
     const jsonWarnings: string[] = [];
 
-    if ((deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') && deferredJsonQuery.trim()) {
-      const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
+    if ((selectedSource.format === 'jsonl' || selectedSource.format === 'ndjson') && debouncedJsonQuery.trim()) {
+      const queried = applyJsonQuery(selectedSource.text, debouncedJsonQuery);
 
       primarySource = {
-        ...deferredSource,
+        ...selectedSource,
         text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
       };
       jsonWarnings.push(...queried.warnings);
@@ -447,7 +462,7 @@ export function App() {
 
     const duckDbChain: VerbChain = {
       input: [{ format: primarySource.format, ref: primarySource.name }],
-      verbs: deferredChain.map((step) => ({
+      verbs: debouncedChain.map((step) => ({
         kind: step.kind,
         opts: step.opts,
         rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
@@ -471,12 +486,12 @@ export function App() {
           duckDbChain,
           sources.map((source) => ({
             dialect:
-              source.id === deferredSource.id
+              source.id === selectedSource.id
                 ? primarySource.inspection.dialect
                 : source.inspection.dialect,
-            format: source.id === deferredSource.id ? primarySource.format : source.format,
-            name: source.id === deferredSource.id ? primarySource.name : source.name,
-            text: source.id === deferredSource.id ? primarySource.text : source.text,
+            format: source.id === selectedSource.id ? primarySource.format : source.format,
+            name: source.id === selectedSource.id ? primarySource.name : source.name,
+            text: source.id === selectedSource.id ? primarySource.text : source.text,
           })),
           jsonWarnings,
         ),
@@ -516,7 +531,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [deferredChain, deferredJsonQuery, deferredSource, engineMode, outputFormat, sources]);
+  }, [debouncedChain, debouncedJsonQuery, engineMode, outputFormat, selectedSource, sources]);
 
   const reshaped = useMemo(() => {
     const baseExecution = duckDbExecution ?? execution;
@@ -600,13 +615,13 @@ export function App() {
   const exportContent = useMemo(() => serializeRows(exportRows, outputFormat), [exportRows, outputFormat]);
 
   async function handleDownloadData() {
-    if (outputFormat === 'parquet' && deferredSource) {
-      let primarySource = deferredSource;
+    if (outputFormat === 'parquet' && selectedSource) {
+      let primarySource = selectedSource;
 
-      if ((deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') && deferredJsonQuery.trim()) {
-        const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
+      if ((selectedSource.format === 'jsonl' || selectedSource.format === 'ndjson') && debouncedJsonQuery.trim()) {
+        const queried = applyJsonQuery(selectedSource.text, debouncedJsonQuery);
         primarySource = {
-          ...deferredSource,
+          ...selectedSource,
           text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
         };
       }
@@ -615,7 +630,7 @@ export function App() {
       const parquetBuffer = await exportDuckDbParquet(
         {
           input: [{ format: primarySource.format, ref: primarySource.name }],
-          verbs: deferredChain.map((step) => ({
+          verbs: debouncedChain.map((step) => ({
             kind: step.kind,
             opts: step.opts,
             rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
@@ -623,10 +638,10 @@ export function App() {
           output: { format: outputFormat },
         },
         sources.map((source) => ({
-          dialect: source.id === deferredSource.id ? primarySource.inspection.dialect : source.inspection.dialect,
-          format: source.id === deferredSource.id ? primarySource.format : source.format,
-          name: source.id === deferredSource.id ? primarySource.name : source.name,
-          text: source.id === deferredSource.id ? primarySource.text : source.text,
+          dialect: source.id === selectedSource.id ? primarySource.inspection.dialect : source.inspection.dialect,
+          format: source.id === selectedSource.id ? primarySource.format : source.format,
+          name: source.id === selectedSource.id ? primarySource.name : source.name,
+          text: source.id === selectedSource.id ? primarySource.text : source.text,
         })),
       );
 
@@ -800,8 +815,8 @@ export function App() {
             ))}
           </div>
 
-          {deferredSource &&
-          (deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') ? (
+          {selectedSource &&
+          (selectedSource.format === 'jsonl' || selectedSource.format === 'ndjson') ? (
             <div className="worker-box">
               <div className="panel-header compact">
                 <Link2 size={16} />
@@ -1049,7 +1064,7 @@ export function App() {
             <Database size={18} />
             <h2>Result preview</h2>
           </div>
-          {!deferredSource ? (
+          {!selectedSource ? (
             <div className="preview-state">
               {isLoading ? 'Loading source...' : 'Load a source to inspect preview data.'}
             </div>
@@ -1058,15 +1073,15 @@ export function App() {
               <div className="metadata-grid">
                 <div>
                   <span>Format</span>
-                  <strong>{deferredSource.format.toUpperCase()}</strong>
+                  <strong>{selectedSource.format.toUpperCase()}</strong>
                 </div>
                 <div>
                   <span>Encoding</span>
-                  <strong>{deferredSource.inspection.encoding.encoding}</strong>
+                  <strong>{selectedSource.inspection.encoding.encoding}</strong>
                 </div>
                 <div>
                   <span>Confidence</span>
-                  <strong>{deferredSource.inspection.encoding.confidence.toFixed(2)}</strong>
+                  <strong>{selectedSource.inspection.encoding.confidence.toFixed(2)}</strong>
                 </div>
                 <div>
                   <span>Columns</span>
@@ -1139,27 +1154,27 @@ export function App() {
                 </button>
               </div>
 
-              {deferredSource.inspection.dialect ? (
+              {selectedSource.inspection.dialect ? (
                 <div className="dialect-controls">
                   <div className="dialect-pill">
                     Delimiter:{' '}
-                    {deferredSource.inspection.dialect.delimiter === '\t'
+                    {selectedSource.inspection.dialect.delimiter === '\t'
                       ? 'TAB'
-                      : deferredSource.inspection.dialect.delimiter}
+                      : selectedSource.inspection.dialect.delimiter}
                   </div>
-                  <div className="dialect-pill">Quote: {deferredSource.inspection.dialect.quote}</div>
-                  <div className="dialect-pill">Escape: {deferredSource.inspection.dialect.escape}</div>
+                  <div className="dialect-pill">Quote: {selectedSource.inspection.dialect.quote}</div>
+                  <div className="dialect-pill">Escape: {selectedSource.inspection.dialect.escape}</div>
                   <div className="dialect-pill">
-                    Line ending: {deferredSource.inspection.dialect.lineEnding}
+                    Line ending: {selectedSource.inspection.dialect.lineEnding}
                   </div>
                   <label className="checkbox-row">
                     <input
                       type="checkbox"
-                      checked={deferredSource.inspection.dialect.hasHeader}
+                      checked={selectedSource.inspection.dialect.hasHeader}
                       onChange={(event) => {
                         setSources((current) =>
                           current.map((source) =>
-                            source.id === deferredSource.id
+                            source.id === selectedSource.id
                               ? withHeaderOverride(source, event.target.checked)
                               : source,
                           ),
@@ -1184,7 +1199,7 @@ export function App() {
                   </thead>
                   <tbody>
                     {previewRows.map((row, rowIndex) => (
-                      <tr key={`${deferredSource.id}-${rowIndex}`}>
+                      <tr key={`${selectedSource.id}-${rowIndex}`}>
                         {previewColumns.map((column) => (
                           <td key={`${rowIndex}-${column}`}>{row[column]}</td>
                         ))}

@@ -2,14 +2,14 @@
   "baseUrl": "http://127.0.0.1:4173",
   "edgeExecutable": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "iterationCount": 5,
-  "p95Ms": 2076.14,
+  "p95Ms": 377.26,
   "rowCount": 100000,
   "thresholdMs": 1000,
   "timingsMs": [
-    1355.49,
-    1968.74,
-    2076.14,
-    1586.93,
-    1425.28
+    331.04,
+    291.43,
+    314.85,
+    377.26,
+    301.59
   ]
 }

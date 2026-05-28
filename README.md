@@ -52,7 +52,7 @@ docker compose up --build
 
 The local worker defaults to `http://localhost:8797`.
 
-Current local qualification note: Lighthouse is green and the worker throughput gate passes, but the browser 100k-row p95 is still `2076.14 ms` versus the required `<= 1000 ms`.
+Current local qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, and the worker throughput gate passes. Remaining blockers are Miller parity completion, browser Miller-WASM evidence, hosted deployment, and final Section 21 closure.
 
 ## Release targets
 

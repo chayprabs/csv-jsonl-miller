@@ -9,8 +9,8 @@ Verifier: Codex
 
 Counts:
   Total checks: 34
-  Passed: 18
-  Failed: 1
+  Passed: 19
+  Failed: 0
   Blocked: 15
 
 Passed:
@@ -31,10 +31,8 @@ Passed:
 - 21.18 A1 sample outputs are recorded in this appendix for fixture-backed evidence.
 - 21.18 A2 worker escalation prompt covered by local unit tests and UI path.
 - 21.12 Worker native DuckDB benchmark clears the 100M-row threshold: `1057.87 ms` for `generate_series(1, 100000000)`.
+- 21.12 Browser 100k-row p95 now clears the target: `377.26 ms` in the production-preview run recorded at `docs/qc/benchmarks/browser-duckdb.json`.
 - Local Lighthouse preview scores clear the handoff gate: `performance=100`, `accessibility=100`, `best-practices=100`, and `seo=100`.
-
-Failures:
-- 21.12 Browser 100k-row p95 still misses the target: `2076.14 ms` in the production-preview run recorded at `docs/qc/benchmarks/browser-duckdb.json`, versus the required `<= 1000 ms`.
 
 Acceptance evidence:
 - Ecommerce CSV fixture aggregates to `books=42.5`, `electronics=129.99`, and `home=77.1` with one paid row per category.
@@ -47,7 +45,6 @@ Blocked:
   Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which loads the ecommerce CSV sample, applies `filter -> stats1`, shows `Engine: DuckDB-WASM`, and captures `docs/qc/screenshots/duckdb-wasm-preview.png`.
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
   Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
-- 21.12 Browser auto mode now routes simple single-source chains to the faster TypeScript preview path, and the benchmark now runs against a production preview build instead of the dev server, but the browser p95 is still above target.
 - 21.13 Privacy evidence is now local-only rather than hosted.
   `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, which currently shows no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
   Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests now assert `Cache-Control: no-store` on those responses.
