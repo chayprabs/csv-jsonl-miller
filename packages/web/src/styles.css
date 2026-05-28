@@ -309,7 +309,8 @@ button {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   border: 1px solid rgba(244, 240, 232, 0.16);
   border-radius: 14px;

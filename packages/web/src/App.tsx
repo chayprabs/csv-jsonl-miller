@@ -1,5 +1,6 @@
 import {
   applyJsonQuery,
+  applyReshape,
   buildDelimitedPreview,
   decodeInput,
   detectEncoding,
@@ -32,6 +33,17 @@ interface ChainStep {
   mode: 'form' | 'raw';
   opts: Record<string, string>;
   rawExpression: string;
+}
+
+interface ReshapeState {
+  mode: 'none' | 'longer' | 'wider' | 'explode';
+  fields: string;
+  namesTo: string;
+  valuesTo: string;
+  namesFrom: string;
+  valuesFrom: string;
+  groupBy: string;
+  field: string;
 }
 
 const WORKER_BASE_URL = import.meta.env.VITE_WORKER_BASE_URL ?? 'http://localhost:8787';
@@ -83,6 +95,16 @@ export function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [chain, setChain] = useState<ChainStep[]>([]);
   const [jsonQuery, setJsonQuery] = useState('select(.status == 500) | {user_id:.user_id,status:.status}');
+  const [reshape, setReshape] = useState<ReshapeState>({
+    mode: 'none',
+    fields: 'jan,feb,mar',
+    namesTo: 'month',
+    valuesTo: 'value',
+    namesFrom: 'month',
+    valuesFrom: 'value',
+    groupBy: 'region',
+    field: 'tags',
+  });
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
@@ -181,7 +203,6 @@ export function App() {
     }
 
     let primarySource = deferredSource;
-    let queriedPreview = deferredSource.inspection.preview;
     let jsonWarnings: string[] = [];
 
     if (
@@ -194,15 +215,7 @@ export function App() {
         ...deferredSource,
         text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
       };
-      queriedPreview = queried.preview;
       jsonWarnings = queried.warnings;
-    }
-
-    if (deferredChain.length === 0) {
-      return {
-        preview: queriedPreview,
-        warnings: [...deferredSource.inspection.warnings, ...jsonWarnings],
-      };
     }
 
     const chainDefinition: VerbChain = {
@@ -231,9 +244,27 @@ export function App() {
     };
   }, [deferredChain, deferredJsonQuery, deferredSource, sources]);
 
-  const previewRows = execution?.preview.rows ?? [];
-  const previewColumns = execution?.preview.columns ?? [];
-  const previewWarnings = execution?.warnings ?? [];
+  const reshaped = useMemo(() => {
+    if (!execution) {
+      return null;
+    }
+
+    if (reshape.mode === 'none') {
+      return execution;
+    }
+
+    const result = applyReshape(execution.rows, reshape);
+
+    return {
+      ...execution,
+      rows: result.rows,
+      preview: result.preview,
+    };
+  }, [execution, reshape]);
+
+  const previewRows = reshaped?.preview.rows ?? execution?.preview.rows ?? [];
+  const previewColumns = reshaped?.preview.columns ?? execution?.preview.columns ?? [];
+  const previewWarnings = reshaped?.warnings ?? execution?.warnings ?? [];
 
   function addVerb(kind: (typeof VERB_PALETTE)[number]) {
     const definition = getVerbDefinition(kind);
@@ -383,6 +414,112 @@ export function App() {
               </label>
             </div>
           ) : null}
+
+          <div className="worker-box">
+            <div className="panel-header compact">
+              <Rows4 size={16} />
+              <h3>Reshape</h3>
+            </div>
+            <div className="field-grid">
+              <label className="field">
+                <span>Mode</span>
+                <select
+                  value={reshape.mode}
+                  onChange={(event) =>
+                    setReshape((current) => ({
+                      ...current,
+                      mode: event.target.value as ReshapeState['mode'],
+                    }))
+                  }
+                >
+                  <option value="none">None</option>
+                  <option value="longer">Pivot longer</option>
+                  <option value="wider">Pivot wider</option>
+                  <option value="explode">Explode</option>
+                </select>
+              </label>
+              {reshape.mode === 'longer' ? (
+                <>
+                  <label className="field">
+                    <span>Fields</span>
+                    <input
+                      type="text"
+                      value={reshape.fields}
+                      onChange={(event) =>
+                        setReshape((current) => ({ ...current, fields: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Names to</span>
+                    <input
+                      type="text"
+                      value={reshape.namesTo}
+                      onChange={(event) =>
+                        setReshape((current) => ({ ...current, namesTo: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Values to</span>
+                    <input
+                      type="text"
+                      value={reshape.valuesTo}
+                      onChange={(event) =>
+                        setReshape((current) => ({ ...current, valuesTo: event.target.value }))
+                      }
+                    />
+                  </label>
+                </>
+              ) : null}
+              {reshape.mode === 'wider' ? (
+                <>
+                  <label className="field">
+                    <span>Names from</span>
+                    <input
+                      type="text"
+                      value={reshape.namesFrom}
+                      onChange={(event) =>
+                        setReshape((current) => ({ ...current, namesFrom: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Values from</span>
+                    <input
+                      type="text"
+                      value={reshape.valuesFrom}
+                      onChange={(event) =>
+                        setReshape((current) => ({ ...current, valuesFrom: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Group by</span>
+                    <input
+                      type="text"
+                      value={reshape.groupBy}
+                      onChange={(event) =>
+                        setReshape((current) => ({ ...current, groupBy: event.target.value }))
+                      }
+                    />
+                  </label>
+                </>
+              ) : null}
+              {reshape.mode === 'explode' ? (
+                <label className="field">
+                  <span>Field</span>
+                  <input
+                    type="text"
+                    value={reshape.field}
+                    onChange={(event) =>
+                      setReshape((current) => ({ ...current, field: event.target.value }))
+                    }
+                  />
+                </label>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         <div className="panel">

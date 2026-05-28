@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyJsonQuery,
+  applyReshape,
   detectEncoding,
   executeVerbChain,
   inspectInput,
@@ -155,5 +156,29 @@ describe('sample registry', () => {
 
     expect(result.preview.columns).toEqual(['user', 'ms']);
     expect(result.preview.rows).toEqual([{ user: 'u2', ms: '300' }]);
+  });
+
+  it('reshapes rows longer, wider, and explode', () => {
+    const longer = applyReshape(
+      [
+        { region: 'north', jan: 120, feb: 140 },
+        { region: 'south', jan: 98, feb: 111 },
+      ],
+      { mode: 'longer', fields: 'jan,feb', namesTo: 'month', valuesTo: 'sales' },
+    );
+    const wider = applyReshape(longer.rows, {
+      mode: 'wider',
+      namesFrom: 'month',
+      valuesFrom: 'sales',
+      groupBy: 'region',
+    });
+    const exploded = applyReshape(
+      [{ id: '1', tags: 'auth,error' }],
+      { mode: 'explode', field: 'tags' },
+    );
+
+    expect(longer.preview.rows[0]).toEqual({ region: 'north', month: 'jan', sales: '120' });
+    expect(wider.preview.rows[1]).toEqual({ region: 'south', jan: '98', feb: '111' });
+    expect(exploded.preview.rows).toEqual([{ id: '1', tags: 'auth' }, { id: '1', tags: 'error' }]);
   });
 });

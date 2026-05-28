@@ -61,3 +61,4 @@ export const SAMPLE_SPECS: SampleSpec[] = [
 export * from './input';
 export * from './execution';
 export * from './json-query';
+export * from './reshape';
