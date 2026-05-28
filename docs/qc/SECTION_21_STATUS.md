@@ -49,8 +49,8 @@ It is not yet a qualified release record.
   Worker responses and `/health` continue to document `artifactTtlSeconds=900` for native fallback paths, and the worker API enforces `Cache-Control: no-store` on `/health` and `/v1/run` responses.
   This item remains open only because the worker retention behavior is still evidenced locally rather than through a hosted worker URL.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
-  Pages deployment is live on GitHub Pages, and the worker image publish workflow is green on `main` for recent commits including `e70ac1e` and `4611797`.
-  `@csvshape/core` is now package-ready with `dist` exports plus a repeatable `pnpm --filter @csvshape/core pack:check` tarball build, recorded in `docs/qc/benchmarks/core-pack.json`, and the release workflow now uploads that package artifact on tags or manual dispatch.
+  Pages deployment is live on GitHub Pages, the worker image publish workflow is green on `main` for run `26606207452` (`e70ac1e`), and the release workflow is green on run `26607199483` (`3239815`) with uploaded artifact `csvshape-core-pack-check`.
+  `@csvshape/core` is now package-ready with `dist` exports plus a repeatable `pnpm --filter @csvshape/core pack:check` tarball build, recorded in `docs/qc/benchmarks/core-pack.json`, and the latest release workflow artifact digest is `sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`.
   There is still no registry publication evidence from npm or GitHub Packages.
   Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint.
 - [ ] 21.19 Final all-green verdict.
