@@ -15,6 +15,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - name: Build worker image for smoke check
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/worker/Dockerfile
+          load: true
+          push: false
+          tags: csvshape-worker:smoke
+      - name: Boot worker container
+        run: |
+          docker run -d --rm --name csvshape-worker-smoke -p 8797:8797 csvshape-worker:smoke
+      - name: Verify worker health
+        run: node apps/worker/scripts/check-health.mjs
+      - name: Show worker logs on failure
+        if: failure()
+        run: docker logs csvshape-worker-smoke
+      - name: Stop worker container
+        if: always()
+        run: docker stop csvshape-worker-smoke || true
       - id: meta
         uses: docker/metadata-action@v5
         with:
