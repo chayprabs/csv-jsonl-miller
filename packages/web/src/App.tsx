@@ -249,6 +249,12 @@ export function App() {
     document.title = routeSeo.title;
     const description = document.querySelector('meta[name="description"]');
     description?.setAttribute('content', routeSeo.description);
+    const canonicalUrl = new URL(window.location.pathname, window.location.origin);
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+
+    if (canonical) {
+      canonical.href = canonicalUrl.toString();
+    }
   }, [routeSeo]);
 
   useEffect(() => {
