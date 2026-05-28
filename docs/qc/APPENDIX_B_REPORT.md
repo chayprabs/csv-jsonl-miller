@@ -17,6 +17,7 @@ Passed:
 - 21.1 Hybrid template present in repo structure.
   Repo metadata now also includes the GitHub Pages homepage URL and 15 discovery topics, satisfying the Section 21 topics threshold.
 - 21.2 Local standard checks pass: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
+  GitHub Actions CI is also green on run `26607665312` for commit `eedd9b9`.
 - 21.3 Local Vite dev server responded `200` and local worker compose health responded `200`.
 - 21.4 Multi-file input UI, worker URL fetch UI, and sample picker present.
 - 21.5 Dialect sniffing, encoding detection, and manual header override present.
@@ -58,7 +59,7 @@ Blocked:
   Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests assert `Cache-Control: no-store` on those responses.
   This item remains blocked only because there is still no hosted worker URL to verify the retention contract remotely.
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
-  Worker image publish run `26606207452` succeeded on `main`, and release run `26607199483` succeeded on `main` with uploaded artifact `csvshape-core-pack-check` (`sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`).
+  Worker image publish run `26607583340` succeeded on `main` and now includes a container boot-and-health smoke check before publishing, and release run `26607199483` succeeded on `main` with uploaded artifact `csvshape-core-pack-check` (`sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`).
   `@csvshape/core` is now package-ready with `dist` exports and a repeatable `pnpm --filter @csvshape/core pack:check` tarball build recorded in `docs/qc/benchmarks/core-pack.json`.
   The repo now includes `render.yaml` and `docs/deploy/RENDER_WORKER.md` for a Git-backed Render worker deployment path.
   Public registry publication evidence is still missing because this machine is not authenticated to npm and the GitHub token still lacks `read:packages`.
