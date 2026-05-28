@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://csvshape.example.com/</loc>
+  </url>
+  <url>
+    <loc>https://csvshape.example.com/csv-filter-online/</loc>
+  </url>
+  <url>
+    <loc>https://csvshape.example.com/csv-join-online/</loc>
+  </url>
+  <url>
+    <loc>https://csvshape.example.com/csv-pivot-online/</loc>
+  </url>
+  <url>
+    <loc>https://csvshape.example.com/jsonl-tools/</loc>
+  </url>
+  <url>
+    <loc>https://csvshape.example.com/miller-online/</loc>
+  </url>
+</urlset>

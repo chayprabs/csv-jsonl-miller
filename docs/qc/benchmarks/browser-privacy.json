@@ -1,0 +1,174 @@
+{
+  "baseUrl": "http://127.0.0.1:4175",
+  "externalRequests": [],
+  "requestCount": 32,
+  "requests": [
+    {
+      "method": "GET",
+      "resourceType": "document",
+      "url": "http://127.0.0.1:4175/"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@vite/client"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/main.tsx"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@react-refresh"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/node_modules/.pnpm/vite@7.3.3_@types+node@24.1_1509e18805081f9fa7566c567d9c230c/node_modules/vite/dist/client/env.mjs"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/react.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/react-dom_client.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/App.tsx"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/styles.css"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/chunk-5SUI2ERJ.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/chunk-G3PMV62Z.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/chunk-ADAK3L2Y.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/index.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/node_modules/.vite/deps/lucide-react.js?v=b1e6b5be"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/catalog.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/engine.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/escalation.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/seo.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/src/verb-definitions.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/input.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/execution.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/json-query.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/reshape.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/export.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "http://127.0.0.1:4175/@fs/C:/Users/chait/OneDrive/Desktop/tools-for-github-push/csv-jsonl-miller/packages/core/src/replay.ts"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "http://127.0.0.1:4175/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "http://127.0.0.1:4175/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "fetch",
+      "url": "http://127.0.0.1:4175/samples/ecommerce-events.csv"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "http://127.0.0.1:4175/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "http://127.0.0.1:4175/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "http://127.0.0.1:4175/favicon.svg"
+    }
+  ],
+  "storageState": {
+    "indexedDbNames": [],
+    "localStorageKeys": [],
+    "sessionStorageKeys": []
+  },
+  "workerBaseUrl": "http://localhost:8797",
+  "workerRequests": []
+}

@@ -1,0 +1,15 @@
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    ports:
+      - "8797:8797"
+    environment:
+      PORT: "8797"
+      WORKER_ARTIFACT_TTL_SECONDS: "900"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8797/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

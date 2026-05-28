@@ -1,0 +1,38 @@
+{
+  "name": "@csvshape/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench:duckdb": "node scripts/benchmark-duckdb.mjs",
+    "build": "vite build",
+    "dev": "vite",
+    "lint": "eslint src --ext .ts,.tsx",
+    "privacy:smoke": "node scripts/privacy-smoke.mjs",
+    "smoke:duckdb": "node scripts/smoke-duckdb.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@csvshape/core": "workspace:*",
+    "@duckdb/duckdb-wasm": "1.33.1-dev45.0",
+    "@tailwindcss/vite": "^4.1.17",
+    "@tanstack/react-query": "^5.90.5",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.554.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.66.1",
+    "tailwindcss": "^4.1.17",
+    "zod": "^4.1.12",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "playwright-core": "^1.60.0",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.7"
+  }
+}

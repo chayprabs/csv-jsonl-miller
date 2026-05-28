@@ -1,0 +1,48 @@
+{
+  "mlrBin": "C:\\Users\\chait\\AppData\\Local\\Temp\\csvshape-tools\\bin\\mlr.exe",
+  "responseStatus": 200,
+  "result": {
+    "artifact": {
+      "contentText": "category,total\nbooks,42.50\nelectronics,129.99\nhome,77.10\n",
+      "filename": "csvshape-output.csv",
+      "format": "csv",
+      "sizeBytes": 57
+    },
+    "artifactTtlSeconds": 900,
+    "columns": [
+      "category",
+      "total"
+    ],
+    "engine": "mlr-native",
+    "preview": [
+      {
+        "category": "books",
+        "total": "42.50"
+      },
+      {
+        "category": "electronics",
+        "total": "129.99"
+      },
+      {
+        "category": "home",
+        "total": "77.10"
+      }
+    ],
+    "rowCount": 3,
+    "rows": [
+      {
+        "category": "books",
+        "total": "42.50"
+      },
+      {
+        "category": "electronics",
+        "total": "129.99"
+      },
+      {
+        "category": "home",
+        "total": "77.10"
+      }
+    ],
+    "status": "completed"
+  }
+}
