@@ -15,6 +15,7 @@
     "build": "pnpm -r --filter ./packages/* --filter ./apps/* build",
     "dev": "pnpm --filter @csvshape/web dev",
     "dev:worker": "pnpm --filter @csvshape/worker dev",
+    "audit:privacy": "node scripts/run-privacy-check.mjs",
     "lint": "pnpm -r --filter ./packages/* --filter ./apps/* lint",
     "test": "pnpm -r --filter ./packages/* --filter ./apps/* test",
     "typecheck": "pnpm -r --filter ./packages/* --filter ./apps/* typecheck",

@@ -8,6 +8,7 @@
     "build": "vite build",
     "dev": "vite",
     "lint": "eslint src --ext .ts,.tsx",
+    "privacy:smoke": "node scripts/privacy-smoke.mjs",
     "smoke:duckdb": "node scripts/smoke-duckdb.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"

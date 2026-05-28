@@ -48,7 +48,9 @@ Blocked:
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
   Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
 - 21.12 Browser auto mode now routes simple single-source chains to the faster TypeScript preview path, and the benchmark now runs against a production preview build instead of the dev server, but the browser p95 is still above target.
-- 21.13 No explicit privacy verification log yet.
+- 21.13 Privacy evidence is now local-only rather than hosted.
+  `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, which currently shows no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
+  Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling.
 - 21.14 Miller-reference parity is only partial so far.
   `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `reorder`, and `unsparsify`.
   Remaining verb gaps are `stats2`, `nest`, and `unnest`.
