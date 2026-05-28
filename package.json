@@ -9,6 +9,9 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "audit:lighthouse": "node scripts/run-lighthouse.mjs",
+    "bench:browser": "node scripts/run-browser-benchmark.mjs",
+    "bench:worker": "pnpm --filter @csvshape/worker bench:duckdb",
     "build": "pnpm -r --filter ./packages/* --filter ./apps/* build",
     "dev": "pnpm --filter @csvshape/web dev",
     "dev:worker": "pnpm --filter @csvshape/worker dev",
@@ -26,6 +29,7 @@
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
+    "lighthouse": "^13.3.0",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",

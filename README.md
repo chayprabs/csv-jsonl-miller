@@ -41,6 +41,9 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm bench:browser
+pnpm bench:worker
+pnpm audit:lighthouse
 pnpm --filter @csvshape/web smoke:duckdb
 docker compose up --build
 ```

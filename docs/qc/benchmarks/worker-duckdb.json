@@ -1,0 +1,9 @@
+{
+  "elapsedMs": 1057.87,
+  "rowCount": 100000000,
+  "result": {
+    "row_count": "100000000",
+    "sum_i": "5000000050000000"
+  },
+  "thresholdMs": 60000
+}
