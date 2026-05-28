@@ -383,4 +383,45 @@ describeIfMlr('Miller reference parity', () => {
 
     expect(actual).toEqual(expected);
   });
+
+  it('matches Miller for nest', async () => {
+    const nestedCsv = ['id,tags_1,tags_2,tags_3,city', '1,alpha,beta,gamma,Delhi', '2,solo,,,Pune', ''].join('\n');
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'nested.csv' }],
+      verbs: [{ kind: 'nest', opts: { field: 'tags', separator: ';' } }],
+      output: { format: 'csv' },
+    };
+
+    const actual = normalizeRows(
+      executeVerbChain(chain, [{ name: 'nested.csv', format: 'csv', text: nestedCsv }]).rows,
+    );
+    const expected = await runMlr(
+      ['nest', '--implode', '--values', '--across-fields', '-f', 'tags'],
+      [{ name: 'nested.csv', text: nestedCsv }],
+    );
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('matches Miller for unnest', async () => {
+    const nestedCsv = ['id,tags,city', '1,alpha;beta;gamma,Delhi', '2,solo,Pune', ''].join('\n');
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'nested.csv' }],
+      verbs: [{ kind: 'unnest', opts: { field: 'tags', separator: ';' } }],
+      output: { format: 'csv' },
+    };
+
+    const actual = normalizeRows(
+      executeVerbChain(chain, [{ name: 'nested.csv', format: 'csv', text: nestedCsv }]).rows,
+    );
+    const expected = await runMlr(
+      ['nest', '--explode', '--values', '--across-fields', '-f', 'tags'],
+      [{ name: 'nested.csv', text: nestedCsv }],
+      {},
+      'csv',
+      'json',
+    );
+
+    expect(actual).toEqual(expected);
+  });
 });

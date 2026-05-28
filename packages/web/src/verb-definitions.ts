@@ -69,16 +69,19 @@ export const VERB_DEFINITIONS: VerbDefinition[] = [
   },
   {
     kind: 'nest',
-    summary: 'Nest multiple fields under a single object.',
+    summary: 'Implode field_1, field_2 style columns into a delimited field.',
     fields: [
-      { key: 'into', label: 'Into field', placeholder: 'payload' },
-      { key: 'fields', label: 'Fields', placeholder: 'city,total,status' },
+      { key: 'field', label: 'Field', placeholder: 'tags' },
+      { key: 'separator', label: 'Separator', placeholder: ';' },
     ],
   },
   {
     kind: 'unnest',
-    summary: 'Expand nested objects into columns.',
-    fields: [{ key: 'field', label: 'Field', placeholder: 'payload' }],
+    summary: 'Explode a delimited field into field_1, field_2 style columns.',
+    fields: [
+      { key: 'field', label: 'Field', placeholder: 'tags' },
+      { key: 'separator', label: 'Separator', placeholder: ';' },
+    ],
   },
 ];
 

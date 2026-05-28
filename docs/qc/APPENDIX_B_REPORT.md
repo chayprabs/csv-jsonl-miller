@@ -50,8 +50,8 @@ Blocked:
   `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, which currently shows no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
   Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests now assert `Cache-Control: no-store` on those responses.
 - 21.14 Miller-reference parity is only partial so far.
-  `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `stats2`, `reorder`, and `unsparsify`.
-  Remaining verb gaps are `nest` and `unnest`.
+  `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for all 12 configured verbs: `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `stats2`, `reorder`, `unsparsify`, `nest`, and `unnest`.
+  The remaining 21.14 gap is broader browser DuckDB-WASM smoke evidence across the acceptance samples rather than just the current local supported-chain smoke.
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
   Direct GHCR package inspection is still blocked by the current token lacking `read:packages`, and npm package evidence is still missing.
 - 21.19 Final qualification blocked on unresolved items above.

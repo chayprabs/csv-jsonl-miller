@@ -172,37 +172,35 @@ describe('sample registry', () => {
 
   it('executes Miller-style unsparsify, nest, and unnest', () => {
     const chain: VerbChain = {
-      input: [{ format: 'jsonl', ref: 'sparse.jsonl' }],
+      input: [{ format: 'csv', ref: 'nested.csv' }],
       verbs: [
-        { kind: 'unsparsify', opts: { fillWith: 'missing' } },
-        { kind: 'nest', opts: { into: 'payload', fields: 'value,city' } },
-        { kind: 'unnest', opts: { field: 'payload' } },
+        { kind: 'nest', opts: { field: 'tags', separator: ';' } },
+        { kind: 'unnest', opts: { field: 'tags', separator: ';' } },
       ],
-      output: { format: 'jsonl' },
+      output: { format: 'csv' },
     };
 
     const result = executeVerbChain(chain, [
       {
-        name: 'sparse.jsonl',
-        format: 'jsonl',
-        text: '{"id":"1","value":10}\n{"id":"2","city":"Delhi"}\n{"id":"3"}\n',
+        name: 'nested.csv',
+        format: 'csv',
+        text: 'id,tags_1,tags_2,tags_3,city\n1,alpha,beta,gamma,Delhi\n2,solo,,,Pune\n',
       },
     ]);
 
     expect(result.preview.rows[0]).toEqual({
       id: '1',
-      value: '10',
-      city: 'missing',
+      tags_1: 'alpha',
+      tags_2: 'beta',
+      tags_3: 'gamma',
+      city: 'Delhi',
     });
     expect(result.preview.rows[1]).toEqual({
       id: '2',
-      value: 'missing',
-      city: 'Delhi',
-    });
-    expect(result.preview.rows[2]).toEqual({
-      id: '3',
-      value: 'missing',
-      city: 'missing',
+      tags_1: 'solo',
+      tags_2: '',
+      tags_3: '',
+      city: 'Pune',
     });
   });
 

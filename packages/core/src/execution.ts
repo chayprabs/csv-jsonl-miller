@@ -681,6 +681,63 @@ function applyUnsparsify(rows: DataRow[], fillWith: string): DataRow[] {
   });
 }
 
+function collectNestedFieldKeys(row: DataRow, field: string): string[] {
+  const prefix = `${field}_`;
+
+  return Object.keys(row)
+    .filter((key) => key.startsWith(prefix))
+    .sort((left, right) => {
+      const leftIndex = Number(left.slice(prefix.length));
+      const rightIndex = Number(right.slice(prefix.length));
+
+      if (Number.isFinite(leftIndex) && Number.isFinite(rightIndex)) {
+        return leftIndex - rightIndex;
+      }
+
+      return left.localeCompare(right, undefined, { numeric: true });
+    });
+}
+
+function applyNestValuesAcrossFields(rows: DataRow[], field: string, separator: string): DataRow[] {
+  return rows.map((row) => {
+    const nestedFieldKeys = collectNestedFieldKeys(row, field);
+
+    if (nestedFieldKeys.length === 0) {
+      return row;
+    }
+
+    const next: DataRow = { ...row };
+    const values = nestedFieldKeys.map((key) => toDisplayValue(row[key] ?? ''));
+
+    for (const key of nestedFieldKeys) {
+      delete next[key];
+    }
+
+    next[field] = values.join(separator);
+    return next;
+  });
+}
+
+function applyUnnestValuesAcrossFields(rows: DataRow[], field: string, separator: string): DataRow[] {
+  return rows.map((row) => {
+    const value = row[field];
+
+    if (typeof value !== 'string') {
+      return row;
+    }
+
+    const parts = value.split(separator);
+    const next: DataRow = { ...row };
+    delete next[field];
+
+    for (const [index, part] of parts.entries()) {
+      next[`${field}_${index + 1}`] = normalizeScalar(part);
+    }
+
+    return next;
+  });
+}
+
 function applyNest(rows: DataRow[], into: string, fieldsSpec: string): DataRow[] {
   const fields = parseFieldsSpec(fieldsSpec);
 
@@ -811,19 +868,35 @@ export function executeVerbChain(chain: VerbChain, sources: ChainSource[]): Exec
         };
         break;
       case 'nest':
-        current = {
-          columns: current.columns,
-          rows: applyNest(
-            current.rows,
-            String(step.opts.into ?? 'nested'),
-            String(step.opts.fields ?? step.rawExpression ?? ''),
-          ),
-        };
+        current = String(step.opts.field ?? '').trim()
+          ? {
+              columns: current.columns,
+              rows: applyNestValuesAcrossFields(
+                current.rows,
+                String(step.opts.field).trim(),
+                String(step.opts.separator ?? ';'),
+              ),
+            }
+          : {
+              columns: current.columns,
+              rows: applyNest(
+                current.rows,
+                String(step.opts.into ?? 'nested'),
+                String(step.opts.fields ?? step.rawExpression ?? ''),
+              ),
+            };
         break;
       case 'unnest':
         current = {
           columns: current.columns,
-          rows: applyUnnest(current.rows, String(step.opts.field ?? step.rawExpression ?? '')),
+          rows:
+            typeof current.rows[0]?.[String(step.opts.field ?? step.rawExpression ?? '')] === 'string'
+              ? applyUnnestValuesAcrossFields(
+                  current.rows,
+                  String(step.opts.field ?? step.rawExpression ?? ''),
+                  String(step.opts.separator ?? ';'),
+                )
+              : applyUnnest(current.rows, String(step.opts.field ?? step.rawExpression ?? '')),
         };
         break;
       default:
