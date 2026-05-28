@@ -43,7 +43,8 @@ Acceptance evidence:
 - Wide-form CSV fixture pivots longer to rows beginning `north/jan/120`, `north/feb/140`, `north/mar/150`, and produces 9 rows total.
 
 Blocked:
-- 21.0 Hosted web URL now exists and returned `200` at `https://chayprabs.github.io/csv-jsonl-miller/`, and the latest `main` runs for `CI`, `Deploy Pages`, and `Publish Worker Image` all succeeded on commit `8936ed5`.
+- 21.0 Hosted web URL now exists and returned `200` at `https://chayprabs.github.io/csv-jsonl-miller/`, and the latest `main` runs for `CI`, `Deploy Pages`, and `Publish Worker Image` are green.
+  The latest worker image evidence now comes from run `26607788767` on commit `8d843f4`, which completed successfully and uploaded the `csvshape-worker-health` artifact.
   The repo now also contains a Render Blueprint in `render.yaml` and deploy notes in `docs/deploy/RENDER_WORKER.md` for creating a public worker service.
   The worker container now installs native Miller directly in `apps/worker/Dockerfile`.
   A hosted worker URL is still not provisioned, so this item remains blocked.
@@ -59,7 +60,7 @@ Blocked:
   Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests assert `Cache-Control: no-store` on those responses.
   This item remains blocked only because there is still no hosted worker URL to verify the retention contract remotely.
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
-  Worker image publish run `26607583340` succeeded on `main` and now includes a container boot-and-health smoke check before publishing, and release run `26607199483` succeeded on `main` with uploaded artifact `csvshape-core-pack-check` (`sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`).
+  Worker image publish run `26607788767` succeeded on `main` and now includes a container boot-and-health smoke check plus uploaded artifact `csvshape-worker-health` (`sha256:294a8939f0412bad80cb70bf773168fb2e4cf691a1b85c480173c9fb20fc2265`) before publishing, and release run `26607199483` succeeded on `main` with uploaded artifact `csvshape-core-pack-check` (`sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`).
   `@csvshape/core` is now package-ready with `dist` exports and a repeatable `pnpm --filter @csvshape/core pack:check` tarball build recorded in `docs/qc/benchmarks/core-pack.json`.
   The repo now includes `render.yaml` and `docs/deploy/RENDER_WORKER.md` for a Git-backed Render worker deployment path.
   Public registry publication evidence is still missing because this machine is not authenticated to npm and the GitHub token still lacks `read:packages`.

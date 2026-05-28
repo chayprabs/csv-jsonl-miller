@@ -33,7 +33,7 @@ It is not yet a qualified release record.
 
 - [ ] 21.0 Hosted URL and worker deployment evidence.
   The static app is now hosted at `https://chayprabs.github.io/csv-jsonl-miller/`, and a direct HTTP check returned `200`.
-  GitHub Actions on `main` now show green `CI`, `Deploy Pages`, and `Publish Worker Image` runs for commit `8936ed5`.
+  GitHub Actions on `main` now show green `CI`, `Deploy Pages`, and `Publish Worker Image` runs, with the latest worker image evidence coming from run `26607788767` (`8d843f4`).
   The repo now also includes a Render Blueprint in `render.yaml` plus deploy notes in `docs/deploy/RENDER_WORKER.md` for a public worker URL.
   The worker container now installs native Miller in `apps/worker/Dockerfile`, so the hosted image path aligns with the advertised native fallback engine set.
   A hosted worker URL is still missing, so this gate is not fully closed yet.
@@ -53,7 +53,7 @@ It is not yet a qualified release record.
   Worker responses and `/health` continue to document `artifactTtlSeconds=900` for native fallback paths, and the worker API enforces `Cache-Control: no-store` on `/health` and `/v1/run` responses.
   This item remains open only because the worker retention behavior is still evidenced locally rather than through a hosted worker URL.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
-  Pages deployment is live on GitHub Pages, the worker image publish workflow is green on `main` for run `26607583340` (`20a871e`) with a container boot-and-health smoke check, and the release workflow is green on run `26607199483` (`3239815`) with uploaded artifact `csvshape-core-pack-check`.
+  Pages deployment is live on GitHub Pages, the worker image publish workflow is green on `main` for run `26607788767` (`8d843f4`) with a container boot-and-health smoke check plus uploaded artifact `csvshape-worker-health` (`sha256:294a8939f0412bad80cb70bf773168fb2e4cf691a1b85c480173c9fb20fc2265`), and the release workflow is green on run `26607199483` (`3239815`) with uploaded artifact `csvshape-core-pack-check`.
   `@csvshape/core` is now package-ready with `dist` exports plus a repeatable `pnpm --filter @csvshape/core pack:check` tarball build, recorded in `docs/qc/benchmarks/core-pack.json`, and the latest release workflow artifact digest is `sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`.
   The worker now has repo-owned Render deployment config in `render.yaml`, but there is still no applied hosted worker instance.
   There is still no registry publication evidence from npm or GitHub Packages.
