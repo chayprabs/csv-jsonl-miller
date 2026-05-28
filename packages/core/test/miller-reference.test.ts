@@ -117,34 +117,56 @@ function parseCsv(text: string, aliasMap: AliasMap = {}): Array<Record<string, s
   });
 }
 
+function parseJson(text: string, aliasMap: AliasMap = {}): Array<Record<string, string>> {
+  const parsed = JSON.parse(text) as DataRow[];
+  return normalizeRows(parsed, aliasMap);
+}
+
 async function runMlr(
   args: string[],
   files: FixtureFile[],
   aliasMap: AliasMap = {},
+  outputFormat: 'csv' | 'json' = 'csv',
+  appendStagedFiles = true,
 ): Promise<Array<Record<string, string>>> {
   const tempDir = await mkdtemp(path.join(tmpdir(), 'csvshape-mlr-parity-'));
 
   try {
     const filePaths: string[] = [];
+    const pathByName = new Map<string, string>();
 
     for (const [index, file] of files.entries()) {
       const filePath = path.join(tempDir, `${index}-${file.name}`);
       await writeFile(filePath, file.text, 'utf8');
       filePaths.push(filePath);
+      pathByName.set(file.name, filePath);
     }
 
-    const result = spawnSync(mlrBinary, ['--csv', ...args, ...filePaths], {
+    const resolvedArgs = args.map((arg) => pathByName.get(arg) ?? arg);
+
+    const result = spawnSync(
+      mlrBinary,
+      [
+        '--csv',
+        outputFormat === 'json' ? '--ojson' : '--ocsv',
+        ...resolvedArgs,
+        ...(appendStagedFiles ? filePaths : []),
+      ],
+      {
       encoding: 'utf8',
       shell: false,
       timeout: 10_000,
       windowsHide: true,
-    });
+      },
+    );
 
     if (result.status !== 0) {
       throw new Error(result.stderr || result.stdout || `mlr exited with code ${result.status ?? 'null'}`);
     }
 
-    return normalizeRows(parseCsv(result.stdout, aliasMap));
+    return outputFormat === 'json'
+      ? parseJson(result.stdout, aliasMap)
+      : normalizeRows(parseCsv(result.stdout, aliasMap));
   } finally {
     await rm(tempDir, { force: true, recursive: true });
   }
@@ -233,6 +255,34 @@ describeIfMlr('Miller reference parity', () => {
     const expected = await runMlr(['cut', '-f', 'order_id,total'], [
       { name: 'orders.csv', text: ordersCsv },
     ]);
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('matches Miller for join', async () => {
+    const usersCsv = ['user_id,team', 'u1,alpha', 'u2,beta', ''].join('\n');
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'orders.csv' }],
+      verbs: [{ kind: 'join', opts: { rightSource: 'users.csv', leftKey: 'user_id', rightKey: 'user_id' } }],
+      output: { format: 'csv' },
+    };
+
+    const actual = normalizeRows(
+      executeVerbChain(chain, [
+        { name: 'orders.csv', format: 'csv', text: ordersCsv },
+        { name: 'users.csv', format: 'csv', text: usersCsv },
+      ]).rows,
+    );
+    const expected = await runMlr(
+      ['join', '-f', 'orders.csv', '-j', 'user_id', '--ul', 'users.csv'],
+      [
+        { name: 'orders.csv', text: ordersCsv },
+        { name: 'users.csv', text: usersCsv },
+      ],
+      {},
+      'json',
+      false,
+    );
 
     expect(actual).toEqual(expected);
   });

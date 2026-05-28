@@ -39,7 +39,7 @@ It is not yet a qualified release record.
   Local Lighthouse preview scores are `performance=100`, `accessibility=100`, `best-practices=100`, and `seo=100` via `docs/qc/benchmarks/lighthouse-summary.json`.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.
 - [ ] 21.14 Full per-verb correctness vs Miller reference.
-  `packages/core/test/miller-reference.test.ts` now verifies `cat`, `filter`, `put`, `cut`, `sort`, `stats1`, and `reorder` against a real local `mlr` binary when available.
-  Remaining parity gaps are `join`, `stats2`, `unsparsify`, `nest`, and `unnest`.
+  `packages/core/test/miller-reference.test.ts` now verifies `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, and `reorder` against a real local `mlr` binary when available.
+  Remaining parity gaps are `stats2`, `unsparsify`, `nest`, and `unnest`.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
 - [ ] 21.19 Final all-green verdict.
