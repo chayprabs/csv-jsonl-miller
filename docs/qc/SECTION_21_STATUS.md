@@ -19,18 +19,18 @@ It is not yet a qualified release record.
 - [x] 21.8 Pivot longer, pivot wider, explode, and grouped stats exist in browser preview.
 - [x] 21.9 Output downloads and replayable chain script exist.
 - [x] 21.10 Replay URL state encode/decode exists.
+- [x] 21.11 Local browser screenshots captured for `/` and `/jsonl-tools/`.
+- [x] 21.16 README now includes local UI screenshots.
+- [x] 21.17 SEO sub-routes build locally: `/csv-filter-online/`, `/csv-join-online/`, `/csv-pivot-online/`, `/jsonl-tools/`, `/miller-online/`.
 - [x] 21.18 A1 sample outputs are asserted in local acceptance tests.
+- [x] 21.18 A1 acceptance evidence is captured in `docs/qc/APPENDIX_B_REPORT.md`.
 - [x] 21.18 A2 implementation path exists: files larger than 1 GB trigger worker fallback prompt.
 
 ## Still open before qualification
 
 - [ ] 21.0 Hosted URL and worker deployment evidence.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
-- [ ] 21.11 UI/UX proof with screenshots and browser flow capture.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
-- [ ] 21.16 README screenshots.
-- [ ] 21.17 SEO sub-route evidence.
-- [ ] 21.18 A1 acceptance evidence from sample outputs captured into the QC appendix.
 - [ ] 21.19 Final all-green verdict.

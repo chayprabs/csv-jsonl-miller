@@ -2,11 +2,30 @@
 
 CSVShape stream-processes CSV, TSV, NDJSON, and JSONL in your browser with Miller-style verb chains, joins, pivots, and dialect sniffing. The browser path uses DuckDB-WASM and Miller-WASM; large files can escalate to a native worker path.
 
+## UI Preview
+
+Homepage:
+
+![CSVShape homepage](docs/qc/screenshots/home.png)
+
+JSONL tools route:
+
+![CSVShape JSONL tools route](docs/qc/screenshots/jsonl-tools.png)
+
 ## Workspace
 
 - `packages/core`: core types, execution planning, format sniffing, and shared fixtures.
 - `packages/web`: Vite + React playground.
 - `apps/worker`: Hono worker for large-file and native-tool execution.
+
+## Route Entry Points
+
+- `/`
+- `/csv-filter-online/`
+- `/csv-join-online/`
+- `/csv-pivot-online/`
+- `/jsonl-tools/`
+- `/miller-online/`
 
 ## Development
 

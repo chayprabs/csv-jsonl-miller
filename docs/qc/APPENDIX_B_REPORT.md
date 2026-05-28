@@ -9,9 +9,9 @@ Verifier: Codex
 
 Counts:
   Total checks: 34
-  Passed: 13
+  Passed: 17
   Failed: 0
-  Blocked: 21
+  Blocked: 17
 
 Passed:
 - 21.1 Hybrid template present in repo structure.
@@ -24,19 +24,25 @@ Passed:
 - 21.8 Pivot longer, pivot wider, explode, and group/aggregate logic present.
 - 21.9 Output download controls and replayable chain script present.
 - 21.10 Replay URL state encode/decode present.
+- 21.11 Local screenshots captured for `/` and `/jsonl-tools/` in `docs/qc/screenshots`.
+- 21.16 README includes current UI screenshots.
+- 21.17 SEO sub-routes build locally via Vite multi-entry output: `/csv-filter-online/`, `/csv-join-online/`, `/csv-pivot-online/`, `/jsonl-tools/`, `/miller-online/`.
 - 21.18 A1 sample assertions covered by local acceptance tests.
+- 21.18 A1 sample outputs are recorded in this appendix for fixture-backed evidence.
 - 21.18 A2 worker escalation prompt covered by local unit tests and UI path.
+
+Acceptance evidence:
+- Ecommerce CSV fixture aggregates to `books=42.5`, `electronics=129.99`, and `home=77.1` with one paid row per category.
+- Access-log JSONL fixture jq-style query returns request `r2` for path `/cart` with duration `983`.
+- Wide-form CSV fixture pivots longer to rows beginning `north/jan/120`, `north/feb/140`, `north/mar/150`, and produces 9 rows total.
 
 Blocked:
 - 21.0 Hosted URL and worker URL are not provisioned yet.
 - 21.1 No evidence yet that the current implementation uses Miller-WASM, DuckDB-WASM, native Miller, or native DuckDB.
-- 21.11 No browser screenshots or DOM captures yet.
 - 21.12 No Lighthouse run or perf measurements yet.
 - 21.13 No explicit privacy verification log yet.
 - 21.14 No Miller-reference parity suite yet.
 - 21.15 No hosted deployment, npm package, or worker image evidence yet.
-- 21.16 README still lacks screenshots.
-- 21.17 SEO sub-routes not implemented yet.
 - 21.19 Final qualification blocked on unresolved items above.
 
 Verdict: NOT QUALIFIED

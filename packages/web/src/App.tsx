@@ -20,6 +20,12 @@ import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
+import {
+  buildEscalationMessage,
+  inferFormat,
+  splitFilesForExecution,
+} from './escalation';
+import { getRouteSeo } from './seo';
 import { getVerbDefinition } from './verb-definitions';
 
 interface LoadedSource {
@@ -70,24 +76,6 @@ const INITIAL_RESHAPE: ReshapeState = {
 
 const WORKER_BASE_URL = import.meta.env.VITE_WORKER_BASE_URL ?? 'http://localhost:8797';
 
-function inferFormat(name: string): FileFormat {
-  const lower = name.toLowerCase();
-
-  if (lower.endsWith('.tsv')) {
-    return 'tsv';
-  }
-
-  if (lower.endsWith('.ndjson')) {
-    return 'ndjson';
-  }
-
-  if (lower.endsWith('.jsonl')) {
-    return 'jsonl';
-  }
-
-  return 'csv';
-}
-
 function withHeaderOverride(source: LoadedSource, hasHeader: boolean): LoadedSource {
   if (!source.inspection.dialect) {
     return source;
@@ -120,18 +108,6 @@ function fileExtension(format: FileFormat): string {
   }
 }
 
-function formatBytes(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(2)} GB`;
-  }
-
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)} MB`;
-  }
-
-  return `${value} B`;
-}
-
 function downloadTextFile(filename: string, content: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -161,6 +137,7 @@ export function App() {
   const deferredSource = useDeferredValue(selectedSource);
   const deferredChain = useDeferredValue(chain);
   const deferredJsonQuery = useDeferredValue(jsonQuery);
+  const routeSeo = useMemo(() => getRouteSeo(window.location.pathname), []);
 
   useEffect(() => {
     const encoded = new URLSearchParams(window.location.search).get('chain');
@@ -189,6 +166,12 @@ export function App() {
     );
     setPendingReplaySourceName(replay.selectedSourceName ?? null);
   }, []);
+
+  useEffect(() => {
+    document.title = routeSeo.title;
+    const description = document.querySelector('meta[name="description"]');
+    description?.setAttribute('content', routeSeo.description);
+  }, [routeSeo]);
 
   useEffect(() => {
     if (!pendingReplaySourceName || sources.length === 0) {
@@ -231,16 +214,17 @@ export function App() {
     setIsLoading(true);
 
     try {
-      const largeFiles = Array.from(fileList).filter((file) => file.size > 1_000_000_000);
-      const browserFiles = Array.from(fileList).filter((file) => file.size <= 1_000_000_000);
+      const { browserFiles, escalationFiles: nextEscalations } = splitFilesForExecution(
+        Array.from(fileList),
+      );
 
-      if (largeFiles.length > 0) {
+      if (nextEscalations.length > 0) {
         setEscalationFiles(
-          largeFiles.map((file) => ({
+          nextEscalations.map((file) => ({
             id: crypto.randomUUID(),
             name: file.name,
-            sizeBytes: file.size,
-            format: inferFormat(file.name),
+            sizeBytes: file.sizeBytes,
+            format: file.format,
           })),
         );
       }
@@ -497,7 +481,7 @@ export function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">CSVShape</p>
-          <h1>Browser-first CSV and JSONL shaping with Miller-style chains.</h1>
+          <h1>{routeSeo.heading}</h1>
         </div>
         <a href="https://github.com/chayprabs/csv-jsonl-miller" target="_blank" rel="noreferrer">
           GitHub
@@ -556,7 +540,7 @@ export function App() {
                     onClick={() => void queueWorkerEscalation(file)}
                   >
                     <strong>{file.name}</strong>
-                    <span>{`${formatBytes(file.sizeBytes)} · ${file.format.toUpperCase()} · worker fallback`}</span>
+                    <span>{buildEscalationMessage(file)}</span>
                   </button>
                 ))}
               </div>
