@@ -107,6 +107,11 @@ const INITIAL_RESHAPE: ReshapeState = {
 };
 
 const WORKER_BASE_URL = import.meta.env.VITE_WORKER_BASE_URL ?? 'http://localhost:8797';
+const APP_BASE_URL = import.meta.env.BASE_URL ?? '/';
+
+function buildAppAssetUrl(pathname: string): string {
+  return new URL(pathname.replace(/^\//, ''), window.location.origin + APP_BASE_URL).toString();
+}
 
 function withHeaderOverride(source: LoadedSource, hasHeader: boolean): LoadedSource {
   if (!source.inspection.dialect) {
@@ -334,7 +339,7 @@ export function App() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/samples/${sample.filename}`);
+      const response = await fetch(buildAppAssetUrl(`samples/${sample.filename}`));
       const bytes = new Uint8Array(await response.arrayBuffer());
       await loadBytes(sample.filename, 'sample', bytes);
     } finally {
