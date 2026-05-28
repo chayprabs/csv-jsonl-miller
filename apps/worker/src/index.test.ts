@@ -1,4 +1,21 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
+
+const samplesDir = path.resolve(
+  process.cwd(),
+  '..',
+  '..',
+  'packages',
+  'web',
+  'public',
+  'samples',
+);
+
+function readSample(filename: string): string {
+  return readFileSync(path.join(samplesDir, filename), 'utf8');
+}
 
 describe('worker metadata', () => {
   it('keeps the fallback retention TTL documented in the worker contract', async () => {
@@ -35,5 +52,139 @@ describe('worker metadata', () => {
     expect(payload.acceptedSource).toBe('local-file-meta');
     expect(payload.artifactTtlSeconds).toBe(900);
     expect(payload.jobId).toBeTruthy();
+  });
+
+  it('reports native engine availability on health checks', async () => {
+    const mod = await import('./index');
+    const response = await mod.default.fetch(new Request('http://localhost/health'));
+    const payload = (await response.json()) as {
+      engines: {
+        duckdbNative: boolean;
+        mlrBinary: boolean;
+      };
+      status: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.status).toBe('ok');
+    expect(payload.engines.duckdbNative).toBe(true);
+    expect(typeof payload.engines.mlrBinary).toBe('boolean');
+  });
+
+  it('executes native DuckDB SQL over inline CSV fixtures', async () => {
+    const mod = await import('./index');
+    const response = await mod.default.fetch(
+      new Request('http://localhost/v1/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nativePlan: {
+            files: [
+              {
+                format: 'csv',
+                name: 'ecommerce-events.csv',
+                text: readSample('ecommerce-events.csv'),
+              },
+            ],
+            outputFormat: 'csv',
+            sql: `
+              SELECT
+                category,
+                sum(total) AS sum_total,
+                count(*) AS paid_orders
+              FROM input0
+              WHERE status = 'paid'
+              GROUP BY 1
+              ORDER BY 1
+            `,
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      artifact?: {
+        contentText?: string;
+        format: string;
+      };
+      engine: string;
+      preview: Array<Record<string, unknown>>;
+      rowCount: number;
+      status: string;
+      tables: Array<{ sourceName: string; tableName: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.status).toBe('completed');
+    expect(payload.engine).toBe('duckdb-native');
+    expect(payload.tables).toEqual([
+      { sourceName: 'ecommerce-events.csv', tableName: 'input0' },
+    ]);
+    expect(payload.preview).toEqual([
+      { category: 'books', sum_total: 42.5, paid_orders: '1' },
+      { category: 'electronics', sum_total: 129.99, paid_orders: '1' },
+      { category: 'home', sum_total: 77.1, paid_orders: '1' },
+    ]);
+    expect(payload.rowCount).toBe(3);
+    expect(payload.artifact?.format).toBe('csv');
+    expect(payload.artifact?.contentText).toContain('category,sum_total,paid_orders');
+  });
+
+  it('executes native DuckDB joins across JSONL and CSV inputs and exports parquet', async () => {
+    const mod = await import('./index');
+    const response = await mod.default.fetch(
+      new Request('http://localhost/v1/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nativePlan: {
+            files: [
+              {
+                format: 'jsonl',
+                name: 'access-log.jsonl',
+                text: readSample('access-log.jsonl'),
+              },
+              {
+                format: 'csv',
+                name: 'users.csv',
+                text: 'user_id,team\nu1,alpha\nu2,beta\n',
+              },
+            ],
+            outputFormat: 'parquet',
+            sql: `
+              SELECT
+                logs.request_id,
+                logs.path,
+                users.team
+              FROM input0 AS logs
+              LEFT JOIN input1 AS users
+                ON logs.user_id = users.user_id
+              ORDER BY logs.request_id
+            `,
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      artifact?: {
+        contentBase64?: string;
+        format: string;
+        sizeBytes: number;
+      };
+      preview: Array<Record<string, unknown>>;
+      rowCount: number;
+      status: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.status).toBe('completed');
+    expect(payload.preview).toEqual([
+      { request_id: 'r1', path: '/login', team: 'alpha' },
+      { request_id: 'r2', path: '/cart', team: 'beta' },
+      { request_id: 'r3', path: '/checkout', team: 'alpha' },
+    ]);
+    expect(payload.rowCount).toBe(3);
+    expect(payload.artifact?.format).toBe('parquet');
+    expect(payload.artifact?.sizeBytes).toBeGreaterThan(0);
+    expect(payload.artifact?.contentBase64).toBeTruthy();
   });
 });

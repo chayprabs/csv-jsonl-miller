@@ -38,7 +38,8 @@ Acceptance evidence:
 
 Blocked:
 - 21.0 Hosted URL and worker URL are not provisioned yet.
-- 21.1 No evidence yet that the current implementation uses Miller-WASM, DuckDB-WASM, native Miller, or native DuckDB.
+- 21.1 Browser DuckDB-WASM and Miller integration evidence is still missing, and native Miller is still absent.
+  Worker-native DuckDB is now packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
 - 21.12 No Lighthouse run or perf measurements yet.
 - 21.13 No explicit privacy verification log yet.
 - 21.14 No Miller-reference parity suite yet.

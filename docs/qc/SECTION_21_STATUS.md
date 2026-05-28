@@ -30,6 +30,7 @@ It is not yet a qualified release record.
 
 - [ ] 21.0 Hosted URL and worker deployment evidence.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
+  Worker-native DuckDB execution now exists and is covered by local tests, but browser DuckDB-WASM and Miller integration evidence is still missing.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
