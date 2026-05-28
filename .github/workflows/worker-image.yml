@@ -35,7 +35,15 @@ jobs:
         run: |
           docker run -d --rm --name csvshape-worker-smoke -p 8797:8797 csvshape-worker:smoke
       - name: Verify worker health
+        env:
+          CSVSHAPE_WORKER_HEALTH_OUT: docs/qc/benchmarks/worker-health-ci.json
         run: node apps/worker/scripts/check-health.mjs
+      - name: Upload worker health artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: csvshape-worker-health
+          path: docs/qc/benchmarks/worker-health-ci.json
       - name: Show worker logs on failure
         if: failure()
         run: docker logs csvshape-worker-smoke

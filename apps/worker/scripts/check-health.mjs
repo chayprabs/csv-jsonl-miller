@@ -1,5 +1,9 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
 const healthUrl = process.env.CSVSHAPE_WORKER_HEALTH_URL ?? 'http://127.0.0.1:8797/health';
 const timeoutMs = Number(process.env.CSVSHAPE_WORKER_HEALTH_TIMEOUT_MS ?? 30000);
+const outputPath = process.env.CSVSHAPE_WORKER_HEALTH_OUT?.trim() || null;
 const startedAt = Date.now();
 
 async function waitForHealth() {
@@ -16,6 +20,23 @@ async function waitForHealth() {
 
         if (payload?.engines?.mlrBinary !== true) {
           throw new Error('mlrBinary was not true');
+        }
+
+        if (outputPath) {
+          await mkdir(path.dirname(outputPath), { recursive: true });
+          await writeFile(
+            outputPath,
+            `${JSON.stringify(
+              {
+                checkedAt: new Date().toISOString(),
+                healthUrl,
+                payload,
+              },
+              null,
+              2,
+            )}\n`,
+            'utf8',
+          );
         }
 
         console.log(JSON.stringify(payload, null, 2));
