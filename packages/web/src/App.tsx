@@ -50,6 +50,13 @@ interface ReshapeState {
   field: string;
 }
 
+interface EscalationFile {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  format: FileFormat;
+}
+
 const INITIAL_RESHAPE: ReshapeState = {
   mode: 'none',
   fields: 'jan,feb,mar',
@@ -113,6 +120,18 @@ function fileExtension(format: FileFormat): string {
   }
 }
 
+function formatBytes(value: number): string {
+  if (value >= 1_000_000_000) {
+    return `${(value / 1_000_000_000).toFixed(2)} GB`;
+  }
+
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)} MB`;
+  }
+
+  return `${value} B`;
+}
+
 function downloadTextFile(filename: string, content: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -136,6 +155,7 @@ export function App() {
   const [reshape, setReshape] = useState<ReshapeState>(INITIAL_RESHAPE);
   const [outputFormat, setOutputFormat] = useState<FileFormat>('csv');
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
+  const [escalationFiles, setEscalationFiles] = useState<EscalationFile[]>([]);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
   const deferredSource = useDeferredValue(selectedSource);
@@ -211,8 +231,22 @@ export function App() {
     setIsLoading(true);
 
     try {
+      const largeFiles = Array.from(fileList).filter((file) => file.size > 1_000_000_000);
+      const browserFiles = Array.from(fileList).filter((file) => file.size <= 1_000_000_000);
+
+      if (largeFiles.length > 0) {
+        setEscalationFiles(
+          largeFiles.map((file) => ({
+            id: crypto.randomUUID(),
+            name: file.name,
+            sizeBytes: file.size,
+            format: inferFormat(file.name),
+          })),
+        );
+      }
+
       await Promise.all(
-        Array.from(fileList).map(async (file) => {
+        browserFiles.map(async (file) => {
           const bytes = new Uint8Array(await file.arrayBuffer());
           await loadBytes(file.name, 'file', bytes);
         }),
@@ -258,6 +292,33 @@ export function App() {
             kind: 'url',
             url: workerUrl,
           },
+        }),
+      });
+      const payload = (await response.json()) as { message?: string; status?: string };
+
+      setWorkerMessage(payload.message ?? `Worker responded with ${payload.status ?? response.status}.`);
+    } catch (error) {
+      setWorkerMessage(error instanceof Error ? error.message : 'Unable to reach worker.');
+    }
+  }
+
+  async function queueWorkerEscalation(file: EscalationFile) {
+    setWorkerMessage(`Queueing worker fallback for ${file.name}...`);
+
+    try {
+      const response = await fetch(`${WORKER_BASE_URL}/v1/run`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: {
+            kind: 'local-file-meta',
+            name: file.name,
+            sizeBytes: file.sizeBytes,
+            format: file.format,
+          },
+          chain: chainDefinition,
         }),
       });
       const payload = (await response.json()) as { message?: string; status?: string };
@@ -475,6 +536,32 @@ export function App() {
               }}
             />
           </div>
+
+          {escalationFiles.length > 0 ? (
+            <div className="worker-box">
+              <div className="panel-header compact">
+                <Upload size={16} />
+                <h3>Worker escalation</h3>
+              </div>
+              <p>
+                Files larger than 1 GB stay out of the browser path and prompt the native worker
+                fallback.
+              </p>
+              <div className="source-list">
+                {escalationFiles.map((file) => (
+                  <button
+                    key={file.id}
+                    type="button"
+                    className="source-item"
+                    onClick={() => void queueWorkerEscalation(file)}
+                  >
+                    <strong>{file.name}</strong>
+                    <span>{`${formatBytes(file.sizeBytes)} · ${file.format.toUpperCase()} · worker fallback`}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="worker-box">
             <div className="panel-header compact">
