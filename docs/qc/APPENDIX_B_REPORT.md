@@ -15,6 +15,7 @@ Counts:
 
 Passed:
 - 21.1 Hybrid template present in repo structure.
+  Repo metadata now also includes the GitHub Pages homepage URL and 15 discovery topics, satisfying the Section 21 topics threshold.
 - 21.2 Local standard checks pass: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
 - 21.3 Local Vite dev server responded `200` and local worker compose health responded `200`.
 - 21.4 Multi-file input UI, worker URL fetch UI, and sample picker present.
@@ -48,8 +49,10 @@ Blocked:
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
   Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
 - 21.13 Privacy evidence is now local-only rather than hosted.
-  `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, which currently shows no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
-  Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests now assert `Cache-Control: no-store` on those responses.
+  Browser-first privacy evidence is now available both locally and on the hosted app.
+  `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, and `pnpm --filter @csvshape/web privacy:smoke` against `https://chayprabs.github.io/csv-jsonl-miller/` produces `docs/qc/benchmarks/browser-privacy-hosted.json`; both show no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
+  Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests assert `Cache-Control: no-store` on those responses.
+  This item remains blocked only because there is still no hosted worker URL to verify the retention contract remotely.
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
   Direct GHCR package inspection is still blocked by the current token lacking `read:packages`, and npm package evidence is still missing.
 - 21.19 Final qualification blocked on unresolved items above.

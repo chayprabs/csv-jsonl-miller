@@ -54,7 +54,7 @@ docker compose up --build
 
 The local worker defaults to `http://localhost:8797`.
 
-Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, the worker throughput gate passes, and the static app is now live on GitHub Pages. Remaining blockers are hosted worker evidence, Miller parity completion, browser Miller-WASM evidence, and final Section 21 closure.
+Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, the worker throughput gate passes, the static app is live on GitHub Pages, and hosted browser-first privacy smoke now passes. Remaining blockers are hosted worker evidence, browser Miller-WASM evidence, package/registry evidence, and final Section 21 closure.
 
 ## Release targets
 

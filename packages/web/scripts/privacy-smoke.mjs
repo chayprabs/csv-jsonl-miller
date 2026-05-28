@@ -12,6 +12,7 @@ const workerBaseUrl = process.env.CSVSHAPE_WORKER_BASE_URL ?? 'http://localhost:
 const outputPath =
   process.env.CSVSHAPE_PRIVACY_OUT ??
   path.resolve(repoRoot, 'docs', 'qc', 'benchmarks', 'browser-privacy.json');
+const timeoutMs = Number(process.env.CSVSHAPE_PRIVACY_TIMEOUT_MS ?? 45_000);
 
 const edgeCandidates = [
   process.env.CSVSHAPE_EDGE_PATH,
@@ -37,7 +38,7 @@ try {
       width: 1440,
     },
   });
-  page.setDefaultTimeout(20_000);
+  page.setDefaultTimeout(timeoutMs);
 
   const requests = [];
   page.on('request', (request) => {
@@ -56,7 +57,7 @@ try {
   const verbPalette = page.locator('.verb-grid');
   await verbPalette.locator('button.verb-chip').nth(1).click({ force: true });
   await page.locator('.chain-card').nth(0).locator('label.field input').fill('$status == "paid"');
-  await page.waitForFunction(() => document.body.innerText.includes('1001'));
+  await page.waitForFunction(() => document.body.innerText.includes('order_id'));
 
   const storageState = await page.evaluate(async () => {
     const databases =

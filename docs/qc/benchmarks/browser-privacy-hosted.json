@@ -1,0 +1,59 @@
+{
+  "baseUrl": "https://chayprabs.github.io/csv-jsonl-miller/",
+  "externalRequests": [],
+  "requestCount": 9,
+  "requests": [
+    {
+      "method": "GET",
+      "resourceType": "document",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/"
+    },
+    {
+      "method": "GET",
+      "resourceType": "script",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/assets/main-xi0tVzhw.js"
+    },
+    {
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/assets/main-Dq3RfLq4.css"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "fetch",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/samples/ecommerce-events.csv"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/favicon.svg"
+    },
+    {
+      "method": "GET",
+      "resourceType": "other",
+      "url": "https://chayprabs.github.io/csv-jsonl-miller/favicon.svg"
+    }
+  ],
+  "storageState": {
+    "indexedDbNames": [],
+    "localStorageKeys": [],
+    "sessionStorageKeys": []
+  },
+  "workerBaseUrl": "https://worker.invalid",
+  "workerRequests": []
+}
