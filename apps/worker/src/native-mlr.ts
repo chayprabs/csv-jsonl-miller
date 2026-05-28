@@ -116,6 +116,10 @@ function quoteWindowsArg(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
+function needsWindowsCommandShell(binary: string): boolean {
+  return /\.(cmd|bat)$/iu.test(binary);
+}
+
 function inferInputPath(dir: string, index: number, file: NativeMlrFile): string {
   return path.join(dir, `input-${index}.${outputExtension(file.format)}`);
 }
@@ -149,7 +153,7 @@ export async function executeNativeMlrPlan(
       const binary = resolveMlrBinary();
       const commandArgs = [...plan.args, ...inputPaths];
       const child =
-        process.platform === 'win32'
+        process.platform === 'win32' && needsWindowsCommandShell(binary)
           ? spawn(
               'cmd.exe',
               [

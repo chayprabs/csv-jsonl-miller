@@ -43,9 +43,10 @@ Acceptance evidence:
 
 Blocked:
 - 21.0 Hosted URL and worker URL are not provisioned yet.
-- 21.1 Miller integration evidence is still missing, and native Miller is still absent.
+- 21.1 Browser Miller-WASM evidence is still missing.
   Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which loads the ecommerce CSV sample, applies `filter -> stats1`, shows `Engine: DuckDB-WASM`, and captures `docs/qc/screenshots/duckdb-wasm-preview.png`.
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
+  Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
 - 21.12 Browser auto mode now routes simple single-source chains to the faster TypeScript preview path, and the benchmark now runs against a production preview build instead of the dev server, but the browser p95 is still above target.
 - 21.13 No explicit privacy verification log yet.
 - 21.14 No Miller-reference parity suite yet.

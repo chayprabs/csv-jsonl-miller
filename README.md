@@ -45,6 +45,7 @@ pnpm bench:browser
 pnpm bench:worker
 pnpm audit:lighthouse
 pnpm --filter @csvshape/web smoke:duckdb
+pnpm --filter @csvshape/worker smoke:mlr
 docker compose up --build
 ```
 
