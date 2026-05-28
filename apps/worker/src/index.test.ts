@@ -97,6 +97,7 @@ describe('worker metadata', () => {
     };
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(payload.status).toBe('ok');
     expect(payload.engines.duckdbNative).toBe(true);
     expect(typeof payload.engines.mlrBinary).toBe('boolean');
@@ -136,6 +137,7 @@ describe('worker metadata', () => {
     };
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(payload.status).toBe('completed');
     expect(payload.engine).toBe('mlr-native');
     expect(payload.preview).toEqual([
@@ -175,6 +177,7 @@ describe('worker metadata', () => {
     };
 
     expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(payload.status).toBe('unavailable');
     expect(payload.engine).toBe('mlr-native');
     expect(payload.error).toBeTruthy();
@@ -223,6 +226,7 @@ describe('worker metadata', () => {
     };
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(payload.status).toBe('completed');
     expect(payload.engine).toBe('duckdb-native');
     expect(payload.tables).toEqual([
@@ -285,6 +289,7 @@ describe('worker metadata', () => {
     };
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(payload.status).toBe('completed');
     expect(payload.preview).toEqual([
       { request_id: 'r1', path: '/login', team: 'alpha' },

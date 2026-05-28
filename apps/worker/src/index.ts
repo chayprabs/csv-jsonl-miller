@@ -35,6 +35,11 @@ const mlrPlanSchema = z.object({
   previewLimit: z.number().int().min(1).max(250).optional(),
 });
 
+app.use('*', async (context, next) => {
+  await next();
+  context.header('Cache-Control', 'no-store');
+});
+
 app.get('/health', (context) => {
   return context.json({
     engines: getNativeEngineStatus(),

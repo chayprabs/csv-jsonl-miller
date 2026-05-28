@@ -50,7 +50,7 @@ Blocked:
 - 21.12 Browser auto mode now routes simple single-source chains to the faster TypeScript preview path, and the benchmark now runs against a production preview build instead of the dev server, but the browser p95 is still above target.
 - 21.13 Privacy evidence is now local-only rather than hosted.
   `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, which currently shows no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
-  Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling.
+  Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests now assert `Cache-Control: no-store` on those responses.
 - 21.14 Miller-reference parity is only partial so far.
   `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `reorder`, and `unsparsify`.
   Remaining verb gaps are `stats2`, `nest`, and `unnest`.

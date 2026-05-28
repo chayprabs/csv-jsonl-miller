@@ -39,7 +39,7 @@ It is not yet a qualified release record.
   Local Lighthouse preview scores are `performance=100`, `accessibility=100`, `best-practices=100`, and `seo=100` via `docs/qc/benchmarks/lighthouse-summary.json`.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.
   `pnpm audit:privacy` now records `docs/qc/benchmarks/browser-privacy.json`, showing no worker requests, no cross-origin requests, and no IndexedDB/localStorage/sessionStorage writes during a normal browser-side sample transform.
-  Worker responses and `/health` continue to document `artifactTtlSeconds=900` for native fallback paths.
+  Worker responses and `/health` continue to document `artifactTtlSeconds=900` for native fallback paths, and the worker API now enforces `Cache-Control: no-store` on `/health` and `/v1/run` responses.
 - [ ] 21.14 Full per-verb correctness vs Miller reference.
   `packages/core/test/miller-reference.test.ts` now verifies `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `reorder`, and `unsparsify` against a real local `mlr` binary when available.
   Remaining parity gaps are `stats2`, `nest`, and `unnest`.
