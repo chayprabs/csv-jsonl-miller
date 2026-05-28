@@ -55,10 +55,12 @@ function probeMlrBinary(): boolean {
   return result.status === 0;
 }
 
-export const nativeEngineStatus: NativeEngineStatus = {
-  duckdbNative: true,
-  mlrBinary: probeMlrBinary(),
-};
+export function getNativeEngineStatus(): NativeEngineStatus {
+  return {
+    duckdbNative: true,
+    mlrBinary: probeMlrBinary(),
+  };
+}
 
 function escapeSqlLiteral(value: string): string {
   return value.replace(/'/g, "''");

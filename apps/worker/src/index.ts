@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { executeNativeDuckDbPlan, nativeEngineStatus } from './native-duckdb';
+import { executeNativeDuckDbPlan, getNativeEngineStatus } from './native-duckdb';
+import { executeNativeMlrPlan } from './native-mlr';
 
 const app = new Hono();
 const artifactTtlSeconds = Number(process.env.WORKER_ARTIFACT_TTL_SECONDS ?? 900);
@@ -19,10 +20,24 @@ const nativePlanSchema = z.object({
   previewLimit: z.number().int().min(1).max(250).optional(),
   sql: z.string().min(1),
 });
+const mlrPlanSchema = z.object({
+  args: z.array(z.string().min(1)).min(1),
+  files: z
+    .array(
+      z.object({
+        format: z.enum(['csv', 'tsv', 'jsonl', 'ndjson']),
+        name: z.string().min(1),
+        text: z.string(),
+      }),
+    )
+    .min(1),
+  outputFormat: z.enum(['csv', 'tsv', 'jsonl', 'ndjson']).optional(),
+  previewLimit: z.number().int().min(1).max(250).optional(),
+});
 
 app.get('/health', (context) => {
   return context.json({
-    engines: nativeEngineStatus,
+    engines: getNativeEngineStatus(),
     status: 'ok',
     artifactTtlSeconds,
     workerMode: 'native-fallback',
@@ -31,6 +46,7 @@ app.get('/health', (context) => {
 
 app.post('/v1/run', async (context) => {
   const body = (await context.req.json().catch(() => ({}))) as {
+    mlrPlan?: unknown;
     nativePlan?: unknown;
     source?: {
       kind?: string;
@@ -67,6 +83,45 @@ app.post('/v1/run', async (context) => {
       status: 'completed',
       tables: result.tables,
     });
+  }
+
+  if (body.mlrPlan !== undefined) {
+    const parsedPlan = mlrPlanSchema.safeParse(body.mlrPlan);
+
+    if (!parsedPlan.success) {
+      return context.json(
+        {
+          error: 'Invalid native Miller plan.',
+          issues: parsedPlan.error.flatten(),
+        },
+        400,
+      );
+    }
+
+    try {
+      const result = await executeNativeMlrPlan(parsedPlan.data);
+
+      return context.json({
+        artifact: result.artifact,
+        artifactTtlSeconds,
+        columns: result.columns,
+        engine: 'mlr-native',
+        preview: result.preview,
+        rowCount: result.rowCount,
+        rows: result.rows,
+        status: 'completed',
+      });
+    } catch (error) {
+      return context.json(
+        {
+          artifactTtlSeconds,
+          engine: 'mlr-native',
+          error: error instanceof Error ? error.message : 'Native Miller execution failed.',
+          status: 'unavailable',
+        },
+        503,
+      );
+    }
   }
 
   const jobId = crypto.randomUUID();

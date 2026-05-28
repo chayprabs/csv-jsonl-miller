@@ -1,7 +1,9 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const samplesDir = path.resolve(
   process.cwd(),
@@ -15,6 +17,35 @@ const samplesDir = path.resolve(
 
 function readSample(filename: string): string {
   return readFileSync(path.join(samplesDir, filename), 'utf8');
+}
+
+const tempPaths: string[] = [];
+
+afterEach(async () => {
+  delete process.env.MLR_BIN;
+  vi.resetModules();
+
+  await Promise.all(
+    tempPaths.splice(0, tempPaths.length).map((targetPath) =>
+      rm(targetPath, { force: true, recursive: true }),
+    ),
+  );
+});
+
+async function createFakeMlr(outputText: string) {
+  const tempDir = await mkdtemp(path.join(tmpdir(), 'csvshape-mlr-test-'));
+  const scriptPath = path.join(tempDir, 'fake-mlr.cmd');
+  tempPaths.push(tempDir);
+  await writeFile(
+    scriptPath,
+    `@echo off\r\nsetlocal\r\n(\r\n${outputText
+      .trimEnd()
+      .split('\n')
+      .map((line) => `echo ${line}`)
+      .join('\r\n')}\r\n)\r\n`,
+    'utf8',
+  );
+  return scriptPath;
 }
 
 describe('worker metadata', () => {
@@ -69,6 +100,84 @@ describe('worker metadata', () => {
     expect(payload.status).toBe('ok');
     expect(payload.engines.duckdbNative).toBe(true);
     expect(typeof payload.engines.mlrBinary).toBe('boolean');
+  });
+
+  it('executes native Miller plans when a binary is configured', async () => {
+    process.env.MLR_BIN = await createFakeMlr('category,sum_total\nbooks,42.5\nhome,77.1\n');
+    const mod = await import('./index');
+    const response = await mod.default.fetch(
+      new Request('http://localhost/v1/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          mlrPlan: {
+            args: ['--csv', 'cut', '-f', 'category,total'],
+            files: [
+              {
+                format: 'csv',
+                name: 'ecommerce-events.csv',
+                text: readSample('ecommerce-events.csv'),
+              },
+            ],
+            outputFormat: 'csv',
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      artifact?: {
+        contentText?: string;
+        format: string;
+      };
+      engine: string;
+      preview: Array<Record<string, unknown>>;
+      rowCount: number;
+      status: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.status).toBe('completed');
+    expect(payload.engine).toBe('mlr-native');
+    expect(payload.preview).toEqual([
+      { category: 'books', sum_total: '42.5' },
+      { category: 'home', sum_total: '77.1' },
+    ]);
+    expect(payload.rowCount).toBe(2);
+    expect(payload.artifact?.format).toBe('csv');
+    expect(payload.artifact?.contentText).toContain('category,sum_total');
+  });
+
+  it('reports Miller unavailability when the binary cannot be started', async () => {
+    process.env.MLR_BIN = path.join(process.cwd(), 'missing-mlr.cmd');
+    const mod = await import('./index');
+    const response = await mod.default.fetch(
+      new Request('http://localhost/v1/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          mlrPlan: {
+            args: ['--csv', 'cat'],
+            files: [
+              {
+                format: 'csv',
+                name: 'ecommerce-events.csv',
+                text: readSample('ecommerce-events.csv'),
+              },
+            ],
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      engine: string;
+      error: string;
+      status: string;
+    };
+
+    expect(response.status).toBe(503);
+    expect(payload.status).toBe('unavailable');
+    expect(payload.engine).toBe('mlr-native');
+    expect(payload.error).toBeTruthy();
   });
 
   it('executes native DuckDB SQL over inline CSV fixtures', async () => {
