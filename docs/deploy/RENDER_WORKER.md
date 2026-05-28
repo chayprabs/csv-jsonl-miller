@@ -12,6 +12,7 @@ This repo includes a `render.yaml` Blueprint for the native worker.
 - Health check path: `/health`
 - Runtime port: `10000`
 - Worker artifact TTL: `900`
+- Native Miller: installed in the container via `apps/worker/Dockerfile`
 
 ## Deploy flow
 
@@ -26,4 +27,5 @@ This repo includes a `render.yaml` Blueprint for the native worker.
 
 - The worker is modeled as a web service because it exposes an HTTP API at `/v1/run`.
 - Local compose still uses port `8797`; Render uses `PORT=10000`.
+- The worker image now installs the `mlr` binary so hosted health checks can expose real native Miller availability.
 - Public hosted verification is not complete until the deployed Render URL is recorded and checked.

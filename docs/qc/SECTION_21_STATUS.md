@@ -34,10 +34,12 @@ It is not yet a qualified release record.
   The static app is now hosted at `https://chayprabs.github.io/csv-jsonl-miller/`, and a direct HTTP check returned `200`.
   GitHub Actions on `main` now show green `CI`, `Deploy Pages`, and `Publish Worker Image` runs for commit `8936ed5`.
   The repo now also includes a Render Blueprint in `render.yaml` plus deploy notes in `docs/deploy/RENDER_WORKER.md` for a public worker URL.
+  The worker container now installs native Miller in `apps/worker/Dockerfile`, so the hosted image path aligns with the advertised native fallback engine set.
   A hosted worker URL is still missing, so this gate is not fully closed yet.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
   Browser DuckDB-WASM is exercised locally across the acceptance samples via `pnpm --filter @csvshape/web smoke:duckdb`, with artifact output in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
   Worker-native DuckDB execution is covered by local tests, and worker-native Miller now has a repeatable local smoke run via `pnpm --filter @csvshape/worker smoke:mlr` with artifact output in `docs/qc/benchmarks/native-mlr-smoke.json`.
+  The worker container now explicitly installs the `mlr` binary in `apps/worker/Dockerfile`, strengthening the hosted native Miller path.
   `pnpm probe:miller-wasm` now records a repeatable upstream browser probe in `docs/qc/benchmarks/browser-miller-wasm-probe.json`; the current direct `GOOS=js GOARCH=wasm` build fails inside Miller's generated parser with `function too big ... exceeds 65536 blocks`.
   Browser Miller-WASM integration evidence is still missing because that upstream build path does not currently produce a usable browser artifact.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.

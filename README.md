@@ -67,6 +67,7 @@ Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 
 
 - Render Blueprint: `render.yaml`
 - Render worker deploy notes: `docs/deploy/RENDER_WORKER.md`
+- Worker container: `apps/worker/Dockerfile` now installs native Miller for hosted fallback paths
 
 ## License
 
