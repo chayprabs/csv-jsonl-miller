@@ -1,0 +1,5 @@
+order_id,customer,category,total,status
+1001,Asha,books,42.50,paid
+1002,Ravi,electronics,129.99,paid
+1003,Asha,books,18.25,refunded
+1004,Maya,home,77.10,paid

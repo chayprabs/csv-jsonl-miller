@@ -10,3 +10,10 @@ CODEX_GOLD_PROMPTS.md
 CODEX_GOAL_PROMPTS.md
 QUALIFYING_CRITERIA.md
 [0-3][0-9]_*.md
+
+# Workspace artifacts
+node_modules
+dist
+coverage
+.turbo
+.vite
