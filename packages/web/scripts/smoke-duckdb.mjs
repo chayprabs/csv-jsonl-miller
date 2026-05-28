@@ -1,4 +1,4 @@
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,105 @@ const baseUrl = process.env.CSVSHAPE_BASE_URL ?? 'http://127.0.0.1:4173';
 const screenshotPath =
   process.env.CSVSHAPE_SCREENSHOT_PATH ??
   path.resolve(repoRoot, 'docs', 'qc', 'screenshots', 'duckdb-wasm-preview.png');
+const artifactPath =
+  process.env.CSVSHAPE_ARTIFACT_PATH ??
+  path.resolve(repoRoot, 'docs', 'qc', 'benchmarks', 'browser-duckdb-smoke.json');
+
+const scenarios = [
+  {
+    expectedTexts: ['books', 'electronics', 'home'],
+    name: 'ecommerce-events',
+    sampleButton: /Ecommerce events CSV/i,
+    sampleLoadedText: 'ecommerce-events.csv',
+    screenshotPath: screenshotPath,
+    steps: [
+      { value: '$status == "paid"', verb: 'filter' },
+      { value: 'sum,total;count,* then group-by category', verb: 'stats1' },
+    ],
+  },
+  {
+    expectedTexts: ['u1', '396.55'],
+    jsonQuery: '.',
+    name: 'access-log',
+    sampleButton: /Access log JSONL/i,
+    sampleLoadedText: 'access-log.jsonl',
+    screenshotPath: screenshotPath.replace(/\.png$/i, '-access-log.png'),
+    steps: [
+      { value: '$status == 200', verb: 'filter' },
+      { value: 'count,*;p95,duration_ms then group-by user_id', verb: 'stats1' },
+    ],
+  },
+  {
+    expectedTexts: ['west', '160', 'north', '150', 'south', '119'],
+    name: 'wide-sales',
+    sampleButton: /Wide-form CSV/i,
+    sampleLoadedText: 'wide-sales.csv',
+    screenshotPath: screenshotPath.replace(/\.png$/i, '-wide-sales.png'),
+    steps: [
+      { value: 'region,mar', verb: 'cut' },
+      { value: '-mar', verb: 'sort' },
+    ],
+  },
+];
+
+async function selectDuckDbMode(page) {
+  await page
+    .locator('.preview-stack .dialect-controls')
+    .nth(0)
+    .locator('select')
+    .nth(0)
+    .selectOption('duckdb-wasm');
+}
+
+async function fillLatestStep(page, value) {
+  const card = page.locator('.chain-card').last();
+
+  if (await card.locator('label.field textarea').count()) {
+    await card.locator('label.field textarea').first().fill(value);
+    return;
+  }
+
+  await card.locator('label.field input').first().fill(value);
+}
+
+async function runScenario(page, scenario) {
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('text=CSVShape');
+  await page.getByRole('button', { name: scenario.sampleButton }).click();
+  await page.waitForFunction((text) => document.body.innerText.includes(text), scenario.sampleLoadedText);
+
+  if (scenario.jsonQuery) {
+    const jsonQueryArea = page.locator('textarea').first();
+    await jsonQueryArea.waitFor();
+    await jsonQueryArea.fill(scenario.jsonQuery);
+  }
+
+  await selectDuckDbMode(page);
+
+  for (const step of scenario.steps) {
+    await page.getByRole('button', { name: new RegExp(`^${step.verb}$`, 'i') }).click({ force: true });
+    await page.locator('.chain-card').last().waitFor();
+    await fillLatestStep(page, step.value);
+  }
+
+  await page.waitForFunction(() =>
+    document.body.innerText.includes('DuckDB-WASM preview is active for the current chain.'),
+  );
+
+  for (const text of scenario.expectedTexts) {
+    await page.waitForFunction((expectedText) => document.body.innerText.includes(expectedText), text);
+  }
+
+  await mkdir(path.dirname(scenario.screenshotPath), { recursive: true });
+  await page.screenshot({ fullPage: true, path: scenario.screenshotPath });
+
+  return {
+    expectedTexts: scenario.expectedTexts,
+    name: scenario.name,
+    screenshotPath: scenario.screenshotPath,
+    status: 'ok',
+  };
+}
 
 const edgeCandidates = [
   process.env.CSVSHAPE_EDGE_PATH,
@@ -48,61 +147,38 @@ try {
   });
 
   console.log(`Opening ${baseUrl}`);
-  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('text=CSVShape');
-  const verbPalette = page.locator('.verb-grid');
-  console.log('Loading ecommerce sample');
-  await page.getByRole('button', { name: /Ecommerce events CSV/i }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('ecommerce-events.csv'));
-  await page.waitForFunction(() => document.body.innerText.includes('1001'));
-  await page
-    .locator('.preview-stack .dialect-controls')
-    .nth(0)
-    .locator('select')
-    .nth(0)
-    .selectOption('duckdb-wasm');
-  console.log('Adding filter step');
-  console.log(`Verb palette: ${(await verbPalette.locator('button.verb-chip').allInnerTexts()).join(', ')}`);
-  await verbPalette.locator('button.verb-chip').nth(1).click({ force: true });
-  await page.waitForTimeout(1_000);
-  console.log(`Chain cards after filter click: ${await page.locator('.chain-card').count()}`);
-  await page.locator('.chain-card').nth(0).waitFor();
-  await page.locator('.chain-card').nth(0).locator('label.field input').fill('$status == "paid"');
-  console.log('Adding stats1 step');
-  await verbPalette.locator('button.verb-chip').nth(6).click({ force: true });
-  await page
-    .locator('.chain-card')
-    .nth(1)
-    .locator('label.field input')
-    .fill('sum,total;count,* then group-by category');
+  const results = [];
 
-  console.log('Waiting for DuckDB-WASM engine message');
-  await page.waitForFunction(() =>
-    document.body.innerText.includes('DuckDB-WASM preview is active for the current chain.'),
-  );
-  await page.waitForFunction(() => document.body.innerText.includes('books'));
-
-  const bodyText = await page.locator('body').innerText();
-
-  if (!bodyText.includes('DuckDB-WASM preview is active for the current chain.')) {
-    throw new Error('DuckDB-WASM engine message did not appear in the UI.');
+  for (const scenario of scenarios) {
+    console.log(`Running DuckDB-WASM smoke for ${scenario.name}`);
+    results.push(await runScenario(page, scenario));
   }
 
-  if (!bodyText.includes('books') || !bodyText.includes('electronics') || !bodyText.includes('home')) {
-    throw new Error('Expected grouped preview rows were not present in the UI.');
-  }
-
-  await mkdir(path.dirname(screenshotPath), { recursive: true });
-  await page.screenshot({ fullPage: true, path: screenshotPath });
-  console.log(`Saved screenshot to ${screenshotPath}`);
-
-  console.log(
+  await mkdir(path.dirname(artifactPath), { recursive: true });
+  await writeFile(
+    artifactPath,
     JSON.stringify(
       {
         baseUrl,
         consoleMessages,
         edgeExecutable,
-        screenshotPath,
+        results,
+        status: 'ok',
+      },
+      null,
+      2,
+    ),
+    'utf8',
+  );
+
+  console.log(
+    JSON.stringify(
+      {
+        artifactPath,
+        baseUrl,
+        consoleMessages,
+        edgeExecutable,
+        results,
         status: 'ok',
       },
       null,

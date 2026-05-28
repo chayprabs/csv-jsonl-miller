@@ -9,9 +9,9 @@ Verifier: Codex
 
 Counts:
   Total checks: 34
-  Passed: 19
+  Passed: 20
   Failed: 0
-  Blocked: 15
+  Blocked: 14
 
 Passed:
 - 21.1 Hybrid template present in repo structure.
@@ -27,6 +27,7 @@ Passed:
 - 21.11 Local screenshots captured for `/` and `/jsonl-tools/` in `docs/qc/screenshots`.
 - 21.16 README includes current UI screenshots.
 - 21.17 SEO sub-routes build locally via Vite multi-entry output: `/csv-filter-online/`, `/csv-join-online/`, `/csv-pivot-online/`, `/jsonl-tools/`, `/miller-online/`.
+- 21.14 Miller-reference parity now passes for all 12 configured verbs, and DuckDB-WASM browser smoke now covers the acceptance samples with artifact output in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
 - 21.18 A1 sample assertions covered by local acceptance tests.
 - 21.18 A1 sample outputs are recorded in this appendix for fixture-backed evidence.
 - 21.18 A2 worker escalation prompt covered by local unit tests and UI path.
@@ -43,15 +44,12 @@ Blocked:
 - 21.0 Hosted web URL now exists and returned `200` at `https://chayprabs.github.io/csv-jsonl-miller/`, and the latest `main` runs for `CI`, `Deploy Pages`, and `Publish Worker Image` all succeeded on commit `8936ed5`.
   A hosted worker URL is still not provisioned, so this item remains blocked.
 - 21.1 Browser Miller-WASM evidence is still missing.
-  Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which loads the ecommerce CSV sample, applies `filter -> stats1`, shows `Engine: DuckDB-WASM`, and captures `docs/qc/screenshots/duckdb-wasm-preview.png`.
+  Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which runs supported DuckDB-WASM chains over the ecommerce CSV, access-log JSONL, and wide-sales CSV samples and records the results in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
   Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
 - 21.13 Privacy evidence is now local-only rather than hosted.
   `pnpm audit:privacy` produces `docs/qc/benchmarks/browser-privacy.json`, which currently shows no worker calls, no cross-origin calls, and no browser storage writes during a standard browser-side sample transform.
   Worker `/health` and `/v1/run` responses continue to expose `artifactTtlSeconds=900` for retention handling, and worker tests now assert `Cache-Control: no-store` on those responses.
-- 21.14 Miller-reference parity is only partial so far.
-  `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for all 12 configured verbs: `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `stats2`, `reorder`, `unsparsify`, `nest`, and `unnest`.
-  The remaining 21.14 gap is broader browser DuckDB-WASM smoke evidence across the acceptance samples rather than just the current local supported-chain smoke.
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
   Direct GHCR package inspection is still blocked by the current token lacking `read:packages`, and npm package evidence is still missing.
 - 21.19 Final qualification blocked on unresolved items above.

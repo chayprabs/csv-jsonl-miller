@@ -1,0 +1,64 @@
+{
+  "baseUrl": "http://127.0.0.1:4176",
+  "consoleMessages": [
+    "[console:debug] [vite] connecting...",
+    "[console:debug] [vite] connected.",
+    "[console:info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:08 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:08 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:08 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:08 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:debug] [vite] connecting...",
+    "[console:debug] [vite] connected.",
+    "[console:info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:13 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:13 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:13 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:13 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:14 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:14 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:debug] [vite] connecting...",
+    "[console:debug] [vite] connected.",
+    "[console:info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:17 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:17 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:17 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}",
+    "[console:log] {timestamp: Fri May 29 2026 04:02:17 GMT+0530 (India Standard Time), level: 2, origin: 4, topic: 4, event: 4}"
+  ],
+  "edgeExecutable": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "results": [
+    {
+      "expectedTexts": [
+        "books",
+        "electronics",
+        "home"
+      ],
+      "name": "ecommerce-events",
+      "screenshotPath": "C:\\Users\\chait\\OneDrive\\Desktop\\tools-for-github-push\\csv-jsonl-miller\\docs\\qc\\screenshots\\duckdb-wasm-preview.png",
+      "status": "ok"
+    },
+    {
+      "expectedTexts": [
+        "u1",
+        "396.55"
+      ],
+      "name": "access-log",
+      "screenshotPath": "C:\\Users\\chait\\OneDrive\\Desktop\\tools-for-github-push\\csv-jsonl-miller\\docs\\qc\\screenshots\\duckdb-wasm-preview-access-log.png",
+      "status": "ok"
+    },
+    {
+      "expectedTexts": [
+        "west",
+        "160",
+        "north",
+        "150",
+        "south",
+        "119"
+      ],
+      "name": "wide-sales",
+      "screenshotPath": "C:\\Users\\chait\\OneDrive\\Desktop\\tools-for-github-push\\csv-jsonl-miller\\docs\\qc\\screenshots\\duckdb-wasm-preview-wide-sales.png",
+      "status": "ok"
+    }
+  ],
+  "status": "ok"
+}

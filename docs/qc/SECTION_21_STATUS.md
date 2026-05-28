@@ -22,6 +22,7 @@ It is not yet a qualified release record.
 - [x] 21.11 Local browser screenshots captured for `/` and `/jsonl-tools/`.
 - [x] 21.16 README now includes local UI screenshots.
 - [x] 21.17 SEO sub-routes build locally: `/csv-filter-online/`, `/csv-join-online/`, `/csv-pivot-online/`, `/jsonl-tools/`, `/miller-online/`.
+- [x] 21.14 Per-verb Miller-reference parity now covers all 12 verbs, and DuckDB-WASM smoke runs now cover the acceptance samples via `docs/qc/benchmarks/browser-duckdb-smoke.json`.
 - [x] 21.18 A1 sample outputs are asserted in local acceptance tests.
 - [x] 21.18 A1 acceptance evidence is captured in `docs/qc/APPENDIX_B_REPORT.md`.
 - [x] 21.18 A2 implementation path exists: files larger than 1 GB trigger worker fallback prompt.
@@ -33,9 +34,9 @@ It is not yet a qualified release record.
   GitHub Actions on `main` now show green `CI`, `Deploy Pages`, and `Publish Worker Image` runs for commit `8936ed5`.
   A hosted worker URL is still missing, so this gate is not fully closed yet.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
-  Browser DuckDB-WASM is exercised locally via `pnpm --filter @csvshape/web smoke:duckdb`.
+  Browser DuckDB-WASM is exercised locally across the acceptance samples via `pnpm --filter @csvshape/web smoke:duckdb`, with artifact output in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
   Worker-native DuckDB execution is covered by local tests, and worker-native Miller now has a repeatable local smoke run via `pnpm --filter @csvshape/worker smoke:mlr` with artifact output in `docs/qc/benchmarks/native-mlr-smoke.json`.
-  Browser Miller-WASM evidence and per-verb Miller parity evidence are still missing.
+  Browser Miller-WASM evidence is still missing.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.
   Browser 100k-row p95 now measures `377.26 ms` via the production-preview benchmark in `docs/qc/benchmarks/browser-duckdb.json`, which clears the `<= 1000 ms` gate.
   Worker native DuckDB clears the 100M-row threshold at `1057.87 ms` via `docs/qc/benchmarks/worker-duckdb.json`.
@@ -43,9 +44,6 @@ It is not yet a qualified release record.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.
   `pnpm audit:privacy` now records `docs/qc/benchmarks/browser-privacy.json`, showing no worker requests, no cross-origin requests, and no IndexedDB/localStorage/sessionStorage writes during a normal browser-side sample transform.
   Worker responses and `/health` continue to document `artifactTtlSeconds=900` for native fallback paths, and the worker API now enforces `Cache-Control: no-store` on `/health` and `/v1/run` responses.
-- [ ] 21.14 Full per-verb correctness vs Miller reference.
-  `packages/core/test/miller-reference.test.ts` now verifies all 12 configured verbs against a real local `mlr` binary when available: `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `stats2`, `reorder`, `unsparsify`, `nest`, and `unnest`.
-  The remaining 21.14 gap is broader browser DuckDB-WASM smoke evidence across the acceptance samples rather than just the current local supported-chain smoke.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
   Pages deployment is now live on GitHub Pages, and the worker image publish workflow is green on `main`.
   Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint or npm package evidence.
