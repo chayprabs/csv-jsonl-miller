@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - cursor/**
   workflow_dispatch:
 
 permissions:
