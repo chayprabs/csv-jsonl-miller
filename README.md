@@ -12,6 +12,10 @@ JSONL tools route:
 
 ![CSVShape JSONL tools route](docs/qc/screenshots/jsonl-tools.png)
 
+DuckDB-WASM preview on a supported browser chain:
+
+![CSVShape DuckDB-WASM preview](docs/qc/screenshots/duckdb-wasm-preview.png)
+
 ## Workspace
 
 - `packages/core`: core types, execution planning, format sniffing, and shared fixtures.
@@ -37,6 +41,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm --filter @csvshape/web smoke:duckdb
 docker compose up --build
 ```
 

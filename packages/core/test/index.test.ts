@@ -85,6 +85,27 @@ describe('sample registry', () => {
     ]);
   });
 
+  it('keeps the preview stable when a filter step has not been configured yet', () => {
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'events.csv' }],
+      verbs: [{ kind: 'filter', opts: { expression: '' } }],
+      output: { format: 'csv' },
+    };
+
+    const result = executeVerbChain(chain, [
+      {
+        name: 'events.csv',
+        format: 'csv',
+        text: 'order_id,total,status\n1001,42.5,paid\n1002,7,refunded\n',
+      },
+    ]);
+
+    expect(result.preview.rows).toEqual([
+      { order_id: '1001', total: '42.5', status: 'paid' },
+      { order_id: '1002', total: '7', status: 'refunded' },
+    ]);
+  });
+
   it('executes joins and grouped stats across loaded sources', () => {
     const chain: VerbChain = {
       input: [{ format: 'jsonl', ref: 'logs.jsonl' }],

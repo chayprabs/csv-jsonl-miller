@@ -89,6 +89,10 @@ function compileCatStep(currentSql: string, step: Verb, tableMap: Map<string, st
 }
 
 function compileFilterStep(currentSql: string, step: Verb): string {
+  if (!getStepText(step, 'expression').trim()) {
+    return currentSql;
+  }
+
   return `SELECT * FROM (${currentSql}) AS current_stream WHERE ${compileScalarExpression(
     getStepText(step, 'expression'),
   )}`;
@@ -116,6 +120,10 @@ function compilePutStep(currentSql: string, step: Verb): string | null {
     return null;
   }
 
+  if (assignments.length === 0) {
+    return currentSql;
+  }
+
   let nextSql = currentSql;
 
   for (const assignment of assignments) {
@@ -134,6 +142,10 @@ function compilePutStep(currentSql: string, step: Verb): string | null {
 function compileCutStep(currentSql: string, step: Verb): string {
   const fields = parseFieldsSpec(getStepText(step, 'fields'));
 
+  if (fields.length === 0) {
+    return currentSql;
+  }
+
   return `SELECT ${fields.map((field) => quoteIdentifier(field)).join(', ')} FROM (${currentSql}) AS current_stream`;
 }
 
@@ -144,7 +156,7 @@ function compileJoinStep(currentSql: string, step: Verb, tableMap: Map<string, s
   const rightTable = tableMap.get(rightSource);
 
   if (!rightTable || !leftKey || !rightKey) {
-    return null;
+    return currentSql;
   }
 
   return `SELECT current_stream.*, joined_stream.* EXCLUDE (${quoteIdentifier(
@@ -159,6 +171,10 @@ function compileSortStep(currentSql: string, step: Verb): string {
     descending: field.startsWith('-'),
     field: field.startsWith('-') ? field.slice(1) : field,
   }));
+
+  if (sortFields.length === 0) {
+    return currentSql;
+  }
 
   return `SELECT * FROM (${currentSql}) AS current_stream ORDER BY ${sortFields
     .map((field) => `${quoteIdentifier(field.field)} ${field.descending ? 'DESC' : 'ASC'}`)
@@ -184,6 +200,11 @@ function compileAggregate(fn: string, field: string): string | null {
 
 function compileStatsStep(currentSql: string, step: Verb): string | null {
   const spec = getStepText(step, 'spec');
+
+  if (!spec.trim()) {
+    return currentSql;
+  }
+
   const [aggregationPart, groupByPart] = spec.split(/\s+then\s+group-by\s+/i);
   const aggregations = aggregationPart
     .split(';')
@@ -220,6 +241,11 @@ function compileStatsStep(currentSql: string, step: Verb): string | null {
 
 function compileReorderStep(currentSql: string, step: Verb): string {
   const fields = parseFieldsSpec(getStepText(step, 'fields'));
+
+  if (fields.length === 0) {
+    return currentSql;
+  }
+
   const excludes = fields.map((field) => quoteIdentifier(field)).join(', ');
 
   return `SELECT ${fields.map((field) => quoteIdentifier(field)).join(', ')}, * EXCLUDE (${excludes}) FROM (${currentSql}) AS current_stream`;
@@ -277,12 +303,20 @@ export function buildReadExpression(
       const quote = source.dialect?.quote ?? '"';
       const escape = source.dialect?.escape ?? quote;
       const header = source.dialect?.hasHeader ?? true;
+      const options = [
+        `delim='${escapeSqlLiteral(delimiter)}'`,
+        `header=${header ? 'true' : 'false'}`,
+      ];
 
-      return `read_csv_auto(${quotedFile}, delim='${escapeSqlLiteral(
-        delimiter,
-      )}', quote='${escapeSqlLiteral(quote)}', escape='${escapeSqlLiteral(
-        escape,
-      )}', header=${header ? 'true' : 'false'})`;
+      if (quote !== 'none') {
+        options.push(`quote='${escapeSqlLiteral(quote)}'`);
+      }
+
+      if (escape !== 'none') {
+        options.push(`escape='${escapeSqlLiteral(escape)}'`);
+      }
+
+      return `read_csv_auto(${quotedFile}, ${options.join(', ')})`;
     }
     case 'jsonl':
     case 'ndjson':

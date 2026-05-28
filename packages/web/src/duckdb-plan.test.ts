@@ -88,4 +88,31 @@ describe('duckdb query planner', () => {
     expect(plan.supported).toBe(false);
     expect(plan.reason).toContain('TypeScript fallback');
   });
+
+  it('keeps DuckDB planning valid while a supported step is still incomplete', () => {
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'ecommerce-events.csv' }],
+      verbs: [{ kind: 'filter', opts: { expression: '' } }],
+      output: { format: 'csv' },
+    };
+
+    const plan = buildDuckDbQueryPlan(chain, [
+      {
+        dialect: {
+          columnCount: 5,
+          delimiter: ',',
+          escape: 'none',
+          hasHeader: true,
+          lineEnding: 'lf',
+          quote: 'none',
+        },
+        format: 'csv',
+        name: 'ecommerce-events.csv',
+        text: 'order_id,customer,category,total,status\n1001,Asha,books,42.50,paid\n',
+      },
+    ]);
+
+    expect(plan.supported).toBe(true);
+    expect(plan.sql).toBe('SELECT * FROM input_0');
+  });
 });

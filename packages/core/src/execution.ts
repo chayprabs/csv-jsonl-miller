@@ -119,6 +119,10 @@ function parseSource(source: ChainSource): DataSet {
 }
 
 function compileExpression(expression: string): (row: DataRow) => unknown {
+  if (!expression.trim()) {
+    return () => undefined;
+  }
+
   const normalized = expression
     .replace(/\band\b/g, '&&')
     .replace(/\bor\b/g, '||')
@@ -136,6 +140,10 @@ function compileExpression(expression: string): (row: DataRow) => unknown {
 }
 
 function applyFilter(rows: DataRow[], expression: string): DataRow[] {
+  if (!expression.trim()) {
+    return rows;
+  }
+
   const predicate = compileExpression(expression);
   return rows.filter((row) => Boolean(predicate(row)));
 }
