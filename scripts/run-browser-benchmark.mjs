@@ -54,17 +54,27 @@ function runCommand(command, args, options = {}) {
   });
 }
 
+await runCommand('pnpm', ['build']);
+
 const server =
   process.platform === 'win32'
-    ? spawn('cmd.exe', ['/d', '/s', '/c', 'pnpm --filter @csvshape/web dev --host 127.0.0.1 --port 4173'], {
-        shell: false,
-        stdio: 'ignore',
-        windowsHide: true,
-      })
-    : spawn('pnpm', ['--filter', '@csvshape/web', 'dev', '--host', '127.0.0.1', '--port', '4173'], {
-        shell: false,
-        stdio: 'ignore',
-      });
+    ? spawn(
+        'cmd.exe',
+        ['/d', '/s', '/c', 'pnpm --filter @csvshape/web exec vite preview --host 127.0.0.1 --port 4173'],
+        {
+          shell: false,
+          stdio: 'ignore',
+          windowsHide: true,
+        },
+      )
+    : spawn(
+        'pnpm',
+        ['--filter', '@csvshape/web', 'exec', 'vite', 'preview', '--host', '127.0.0.1', '--port', '4173'],
+        {
+          shell: false,
+          stdio: 'ignore',
+        },
+      );
 
 try {
   await waitForPort(4173, 60_000);

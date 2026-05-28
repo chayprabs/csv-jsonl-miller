@@ -89,7 +89,7 @@ try {
       .locator('label.field input')
       .fill('sum,total;count,* then group-by category');
     await page.waitForFunction(() =>
-      document.body.innerText.includes('DuckDB-WASM preview is active for the current chain.'),
+      document.body.innerText.includes('Auto mode is using the fast TypeScript preview path for the current chain.'),
     );
     await page.waitForFunction(() => document.body.innerText.includes('books'));
     timingsMs.push(Number((performance.now() - start).toFixed(2)));

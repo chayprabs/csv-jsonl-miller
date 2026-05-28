@@ -55,6 +55,12 @@ try {
   await page.getByRole('button', { name: /Ecommerce events CSV/i }).click();
   await page.waitForFunction(() => document.body.innerText.includes('ecommerce-events.csv'));
   await page.waitForFunction(() => document.body.innerText.includes('1001'));
+  await page
+    .locator('.preview-stack .dialect-controls')
+    .nth(0)
+    .locator('select')
+    .nth(0)
+    .selectOption('duckdb-wasm');
   console.log('Adding filter step');
   console.log(`Verb palette: ${(await verbPalette.locator('button.verb-chip').allInnerTexts()).join(', ')}`);
   await verbPalette.locator('button.verb-chip').nth(1).click({ force: true });

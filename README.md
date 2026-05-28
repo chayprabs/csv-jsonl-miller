@@ -1,6 +1,6 @@
 # CSVShape
 
-CSVShape stream-processes CSV, TSV, NDJSON, and JSONL in your browser with Miller-style verb chains, joins, pivots, and dialect sniffing. The browser path uses DuckDB-WASM and Miller-WASM; large files can escalate to a native worker path.
+CSVShape stream-processes CSV, TSV, NDJSON, and JSONL in your browser with Miller-style verb chains, joins, pivots, and dialect sniffing. The browser path currently uses DuckDB-WASM plus a TypeScript preview executor, and large files can escalate to a native worker path.
 
 ## UI Preview
 
@@ -49,6 +49,8 @@ docker compose up --build
 ```
 
 The local worker defaults to `http://localhost:8797`.
+
+Current local qualification note: Lighthouse is green and the worker throughput gate passes, but the browser 100k-row p95 is still `2076.14 ms` versus the required `<= 1000 ms`.
 
 ## Release targets
 

@@ -1,5 +1,5 @@
 import type { DialectDetection, PreviewTable } from './input';
-import { buildDelimitedPreview, sniffDialect } from './input';
+import { sniffDialect } from './input';
 import type { FileFormat, Verb, VerbChain } from './index';
 
 export type DataValue =
@@ -91,14 +91,78 @@ function toDisplayValue(value: DataValue): string {
 
 function parseDelimitedSource(text: string, dialect?: DialectDetection | null): DataSet {
   const resolvedDialect = dialect ?? sniffDialect(text);
-  const preview = buildDelimitedPreview(text, resolvedDialect, Number.MAX_SAFE_INTEGER);
+  const lines = splitLines(text);
+
+  if (lines.length === 0) {
+    return {
+      columns: [],
+      rows: [],
+    };
+  }
+
+  const headerCells = splitDelimitedRow(lines[0], resolvedDialect.delimiter);
+  const columns = resolvedDialect.hasHeader
+    ? headerCells
+    : Array.from({ length: resolvedDialect.columnCount }, (_, index) => `column_${index + 1}`);
+  const startIndex = resolvedDialect.hasHeader ? 1 : 0;
 
   return {
-    columns: preview.columns,
-    rows: preview.rows.map((row) =>
-      Object.fromEntries(Object.entries(row).map(([key, value]) => [key, normalizeScalar(value)])),
-    ),
+    columns,
+    rows: lines.slice(startIndex).map((line) => {
+      const cells = splitDelimitedRow(line, resolvedDialect.delimiter);
+      const row: DataRow = {};
+
+      for (let index = 0; index < columns.length; index += 1) {
+        row[columns[index]] = normalizeScalar(cells[index] ?? '');
+      }
+
+      return row;
+    }),
   };
+}
+
+function parseComparisonValue(rawValue: string): DataValue {
+  if (rawValue.startsWith('"')) {
+    return JSON.parse(rawValue) as DataValue;
+  }
+
+  if (rawValue.startsWith("'")) {
+    return rawValue.slice(1, -1).replace(/\\'/g, "'");
+  }
+
+  return normalizeScalar(rawValue);
+}
+
+function splitDelimitedRow(line: string, delimiter: string): string[] {
+  const cells: string[] = [];
+  let cell = '';
+  let inQuote = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+
+    if (char === '"') {
+      if (inQuote && next === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        inQuote = !inQuote;
+      }
+      continue;
+    }
+
+    if (!inQuote && char === delimiter) {
+      cells.push(cell);
+      cell = '';
+      continue;
+    }
+
+    cell += char;
+  }
+
+  cells.push(cell);
+  return cells;
 }
 
 function parseJsonLinesSource(text: string): DataSet {
@@ -119,11 +183,27 @@ function parseSource(source: ChainSource): DataSet {
 }
 
 function compileExpression(expression: string): (row: DataRow) => unknown {
-  if (!expression.trim()) {
+  const trimmed = expression.trim();
+
+  if (!trimmed) {
     return () => undefined;
   }
 
-  const normalized = expression
+  const simpleComparison = trimmed.match(
+    /^\$?([A-Za-z_][\w.]*)\s*(==|!=)\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|-?\d+(?:\.\d+)?|true|false|null)\s*$/,
+  );
+
+  if (simpleComparison) {
+    const [, field, operator, rawValue] = simpleComparison;
+    const comparisonValue = parseComparisonValue(rawValue);
+
+    return (row) =>
+      operator === '=='
+        ? row[field] === comparisonValue
+        : row[field] !== comparisonValue;
+  }
+
+  const normalized = trimmed
     .replace(/\band\b/g, '&&')
     .replace(/\bor\b/g, '||')
     .replace(/\$([A-Za-z_][\w.]*)/g, (_, field: string) => `get(${JSON.stringify(field)})`);
@@ -290,7 +370,21 @@ function percentile(values: number[], quantile: number): number {
   return sorted[index];
 }
 
-function applyStats(rows: DataRow[], spec: string): DataRow[] {
+interface ParsedAggregation {
+  field: string;
+  fn: string;
+}
+
+interface GroupAccumulator {
+  distinct?: Set<string>;
+  numbers?: number[];
+  sampleRow: DataRow;
+  valueCount: number;
+  rowCount: number;
+  sum: number;
+}
+
+function parseAggregationSpec(spec: string): { aggregations: ParsedAggregation[]; groupBy: string[] } {
   const [aggregationPart, groupByPart] = spec.split(/\s+then\s+group-by\s+/i);
   const aggregations = aggregationPart
     .split(';')
@@ -300,49 +394,99 @@ function applyStats(rows: DataRow[], spec: string): DataRow[] {
       const [fn, field] = part.split(',').map((token) => token.trim());
       return { fn, field };
     });
-  const groupBy = groupByPart ? parseFieldsSpec(groupByPart) : [];
-  const groups = new Map<string, DataRow[]>();
+
+  return {
+    aggregations,
+    groupBy: groupByPart ? parseFieldsSpec(groupByPart) : [],
+  };
+}
+
+function applyStats(rows: DataRow[], spec: string): DataRow[] {
+  const { aggregations, groupBy } = parseAggregationSpec(spec);
+  const groups = new Map<string, GroupAccumulator[]>();
 
   for (const row of rows) {
     const key = JSON.stringify(groupBy.map((field) => row[field] ?? ''));
-    const matches = groups.get(key) ?? [];
-    matches.push(row);
-    groups.set(key, matches);
-  }
+    const groupAccumulators =
+      groups.get(key) ??
+      aggregations.map((aggregation) => ({
+        distinct: aggregation.fn === 'distinct' ? new Set<string>() : undefined,
+        numbers: aggregation.fn === 'p95' ? [] : undefined,
+        sampleRow: row,
+        sum: 0,
+        valueCount: 0,
+        rowCount: 0,
+      }));
 
-  return Array.from(groups.values()).map((groupRows) => {
-    const next: DataRow = {};
+    for (let index = 0; index < aggregations.length; index += 1) {
+      const aggregation = aggregations[index];
+      const accumulator = groupAccumulators[index];
+      const value = row[aggregation.field];
 
-    for (const field of groupBy) {
-      next[field] = groupRows[0]?.[field] ?? '';
+      accumulator.rowCount += 1;
+
+      if (aggregation.fn === 'count' && aggregation.field === '*') {
+        continue;
+      }
+
+      if (typeof value !== 'string' && typeof value !== 'number') {
+        continue;
+      }
+
+      accumulator.valueCount += 1;
+
+      if (aggregation.fn === 'distinct' && accumulator.distinct) {
+        accumulator.distinct.add(toDisplayValue(value));
+        continue;
+      }
+
+      const numericValue = typeof value === 'number' ? value : Number(value);
+
+      if (Number.isNaN(numericValue)) {
+        continue;
+      }
+
+      accumulator.sum += numericValue;
+
+      if (aggregation.fn === 'p95' && accumulator.numbers) {
+        accumulator.numbers.push(numericValue);
+      }
     }
 
-    for (const aggregation of aggregations) {
-      const values = groupRows
-        .map((row) => row[aggregation.field])
-        .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number');
-      const numbers = values
-        .map((value) => (typeof value === 'number' ? value : Number(value)))
-        .filter((value) => !Number.isNaN(value));
+    groups.set(key, groupAccumulators);
+  }
+
+  return Array.from(groups.values()).map((groupAccumulators) => {
+    const next: DataRow = {};
+    const sampleRow = groupAccumulators[0]?.sampleRow ?? {};
+
+    for (const field of groupBy) {
+      next[field] = sampleRow[field] ?? '';
+    }
+
+    for (let index = 0; index < aggregations.length; index += 1) {
+      const aggregation = aggregations[index];
+      const accumulator = groupAccumulators[index];
       const outputKey = `${aggregation.fn}_${aggregation.field}`;
 
       switch (aggregation.fn) {
         case 'sum':
-          next[outputKey] = numbers.reduce((total, value) => total + value, 0);
+          next[outputKey] = accumulator.sum;
           break;
         case 'mean':
-          next[outputKey] = numbers.length
-            ? numbers.reduce((total, value) => total + value, 0) / numbers.length
+          next[outputKey] = accumulator.valueCount
+            ? accumulator.sum / accumulator.valueCount
             : 0;
           break;
         case 'count':
-          next[outputKey] = aggregation.field === '*' ? groupRows.length : values.length;
+          next[outputKey] =
+            aggregation.field === '*' ? accumulator.rowCount : accumulator.valueCount;
           break;
         case 'p95':
-          next[outputKey] = percentile(numbers, 0.95);
+          next[outputKey] = percentile(accumulator.numbers ?? [], 0.95);
           break;
         case 'distinct':
-          next[outputKey] = new Set(values.map((value) => toDisplayValue(value))).size;
+          next[outputKey] = accumulator.distinct?.size ?? 0;
           break;
         default:
           next[outputKey] = '';

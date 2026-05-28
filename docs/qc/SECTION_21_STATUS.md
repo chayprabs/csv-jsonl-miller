@@ -32,7 +32,7 @@ It is not yet a qualified release record.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
   Browser DuckDB-WASM is now exercised locally via `pnpm --filter @csvshape/web smoke:duckdb`, and worker-native DuckDB execution is covered by local tests, but Miller integration evidence is still missing.
 - [ ] 21.12 Performance evidence for browser p95 and worker throughput.
-  Browser 100k-row p95 currently measures `5584.26 ms` via `docs/qc/benchmarks/browser-duckdb.json`, which misses the `<= 1000 ms` gate.
+  Browser 100k-row p95 currently measures `2076.14 ms` via the production-preview benchmark in `docs/qc/benchmarks/browser-duckdb.json`, which still misses the `<= 1000 ms` gate.
   Worker native DuckDB clears the 100M-row threshold at `1057.87 ms` via `docs/qc/benchmarks/worker-duckdb.json`.
   Local Lighthouse preview scores are `performance=100`, `accessibility=100`, `best-practices=100`, and `seo=100` via `docs/qc/benchmarks/lighthouse-summary.json`.
 - [ ] 21.13 Privacy proof for browser-first processing and worker retention TTL handling.

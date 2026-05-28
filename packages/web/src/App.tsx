@@ -22,6 +22,7 @@ import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
+import { resolveExecutionEngine, type EngineMode } from './engine';
 import {
   buildEscalationMessage,
   inferFormat,
@@ -192,6 +193,7 @@ export function App() {
     warnings: string[];
   } | null>(null);
   const [executionEngine, setExecutionEngine] = useState<'duckdb-wasm' | 'typescript'>('typescript');
+  const [engineMode, setEngineMode] = useState<EngineMode>('auto');
   const [engineMessage, setEngineMessage] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
@@ -452,6 +454,16 @@ export function App() {
       })),
       output: { format: outputFormat },
     };
+    const resolvedEngine = resolveExecutionEngine(engineMode, duckDbChain, sources.length, outputFormat);
+
+    if (resolvedEngine.engine === 'typescript') {
+      setDuckDbExecution(null);
+      setExecutionEngine('typescript');
+      setEngineMessage(resolvedEngine.message);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     void loadDuckDbBrowserModule()
       .then(({ runDuckDbPreview }) =>
@@ -483,7 +495,7 @@ export function App() {
             warnings: result.warnings,
           });
           setExecutionEngine('duckdb-wasm');
-          setEngineMessage('DuckDB-WASM preview is active for the current chain.');
+          setEngineMessage(resolvedEngine.message);
           return;
         }
 
@@ -504,7 +516,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [deferredChain, deferredJsonQuery, deferredSource, outputFormat, sources]);
+  }, [deferredChain, deferredJsonQuery, deferredSource, engineMode, outputFormat, sources]);
 
   const reshaped = useMemo(() => {
     const baseExecution = duckDbExecution ?? execution;
@@ -1072,6 +1084,17 @@ export function App() {
               {engineMessage ? <p className="worker-message">{engineMessage}</p> : null}
 
               <div className="dialect-controls">
+                <label className="field inline-field">
+                  <span>Engine mode</span>
+                  <select
+                    value={engineMode}
+                    onChange={(event) => setEngineMode(event.target.value as EngineMode)}
+                  >
+                    <option value="auto">Auto</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="duckdb-wasm">DuckDB-WASM</option>
+                  </select>
+                </label>
                 <label className="field inline-field">
                   <span>Output format</span>
                   <select
