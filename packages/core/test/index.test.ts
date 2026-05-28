@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyJsonQuery,
   detectEncoding,
   executeVerbChain,
   inspectInput,
@@ -144,5 +145,15 @@ describe('sample registry', () => {
       value: '10',
       city: 'Delhi',
     });
+  });
+
+  it('applies jq-style select and projection over jsonl rows', () => {
+    const result = applyJsonQuery(
+      '{"user":"u1","status":200,"latency":90}\n{"user":"u2","status":500,"latency":300}\n',
+      'select(.status == 500) | {user:.user,ms:.latency}',
+    );
+
+    expect(result.preview.columns).toEqual(['user', 'ms']);
+    expect(result.preview.rows).toEqual([{ user: 'u2', ms: '300' }]);
   });
 });

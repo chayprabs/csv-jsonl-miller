@@ -1,4 +1,5 @@
 import {
+  applyJsonQuery,
   buildDelimitedPreview,
   decodeInput,
   detectEncoding,
@@ -81,11 +82,13 @@ export function App() {
   const [workerMessage, setWorkerMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chain, setChain] = useState<ChainStep[]>([]);
+  const [jsonQuery, setJsonQuery] = useState('select(.status == 500) | {user_id:.user_id,status:.status}');
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
   const deferredSource = useDeferredValue(selectedSource);
   const deferredChain = useDeferredValue(chain);
+  const deferredJsonQuery = useDeferredValue(jsonQuery);
 
   async function loadBytes(name: string, sourceType: LoadedSource['sourceType'], bytes: Uint8Array) {
     const format = inferFormat(name);
@@ -177,37 +180,60 @@ export function App() {
       return null;
     }
 
+    let primarySource = deferredSource;
+    let queriedPreview = deferredSource.inspection.preview;
+    let jsonWarnings: string[] = [];
+
+    if (
+      (deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') &&
+      deferredJsonQuery.trim()
+    ) {
+      const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
+
+      primarySource = {
+        ...deferredSource,
+        text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
+      };
+      queriedPreview = queried.preview;
+      jsonWarnings = queried.warnings;
+    }
+
     if (deferredChain.length === 0) {
       return {
-        preview: deferredSource.inspection.preview,
-        warnings: deferredSource.inspection.warnings,
+        preview: queriedPreview,
+        warnings: [...deferredSource.inspection.warnings, ...jsonWarnings],
       };
     }
 
     const chainDefinition: VerbChain = {
-      input: [{ format: deferredSource.format, ref: deferredSource.name }],
+      input: [{ format: primarySource.format, ref: primarySource.name }],
       verbs: deferredChain.map((step) => ({
         kind: step.kind,
         opts: step.opts,
         rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
       })),
-      output: { format: deferredSource.format },
+      output: { format: primarySource.format },
     };
 
-    return executeVerbChain(
+    const result = executeVerbChain(
       chainDefinition,
       sources.map((source) => ({
-        name: source.name,
-        format: source.format,
-        text: source.text,
-        dialect: source.inspection.dialect,
+        name: source.id === deferredSource.id ? primarySource.name : source.name,
+        format: source.id === deferredSource.id ? primarySource.format : source.format,
+        text: source.id === deferredSource.id ? primarySource.text : source.text,
+        dialect: source.id === deferredSource.id ? null : source.inspection.dialect,
       })),
     );
-  }, [deferredChain, deferredSource, sources]);
+
+    return {
+      ...result,
+      warnings: [...result.warnings, ...jsonWarnings],
+    };
+  }, [deferredChain, deferredJsonQuery, deferredSource, sources]);
 
   const previewRows = execution?.preview.rows ?? [];
   const previewColumns = execution?.preview.columns ?? [];
-  const previewWarnings = [...(execution?.warnings ?? []), ...(deferredSource?.inspection.warnings ?? [])];
+  const previewWarnings = execution?.warnings ?? [];
 
   function addVerb(kind: (typeof VERB_PALETTE)[number]) {
     const definition = getVerbDefinition(kind);
@@ -338,6 +364,25 @@ export function App() {
               </button>
             ))}
           </div>
+
+          {deferredSource &&
+          (deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') ? (
+            <div className="worker-box">
+              <div className="panel-header compact">
+                <Link2 size={16} />
+                <h3>jq for JSONL</h3>
+              </div>
+              <label className="field">
+                <span>jq-style query</span>
+                <textarea
+                  rows={4}
+                  value={jsonQuery}
+                  placeholder='select(.status == 500) | {user_id:.user_id,status:.status}'
+                  onChange={(event) => setJsonQuery(event.target.value)}
+                />
+              </label>
+            </div>
+          ) : null}
         </div>
 
         <div className="panel">
