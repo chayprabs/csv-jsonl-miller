@@ -22,7 +22,6 @@ import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
-import { exportDuckDbParquet, runDuckDbPreview } from './duckdb-browser';
 import {
   buildEscalationMessage,
   inferFormat,
@@ -64,6 +63,35 @@ interface EscalationFile {
   name: string;
   sizeBytes: number;
   format: FileFormat;
+}
+
+interface DuckDbBrowserModule {
+  exportDuckDbParquet: (
+    chain: VerbChain,
+    sources: Array<{
+      dialect?: DialectDetection | null;
+      format: FileFormat;
+      name: string;
+      text: string;
+    }>,
+  ) => Promise<Uint8Array | null>;
+  runDuckDbPreview: (
+    chain: VerbChain,
+    sources: Array<{
+      dialect?: DialectDetection | null;
+      format: FileFormat;
+      name: string;
+      text: string;
+    }>,
+    extraWarnings?: string[],
+  ) => Promise<{
+    columns: string[];
+    planReason: string | null;
+    preview: PreviewTable;
+    rows: DataRow[];
+    usingDuckDb: boolean;
+    warnings: string[];
+  }>;
 }
 
 const INITIAL_RESHAPE: ReshapeState = {
@@ -130,6 +158,16 @@ function downloadBinaryFile(filename: string, content: Uint8Array, mimeType: str
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+let duckDbBrowserModulePromise: Promise<DuckDbBrowserModule> | null = null;
+
+function loadDuckDbBrowserModule() {
+  if (!duckDbBrowserModulePromise) {
+    duckDbBrowserModulePromise = import('./duckdb-browser');
+  }
+
+  return duckDbBrowserModulePromise;
 }
 
 export function App() {
@@ -415,16 +453,22 @@ export function App() {
       output: { format: outputFormat },
     };
 
-    void runDuckDbPreview(
-      duckDbChain,
-      sources.map((source) => ({
-        dialect: source.id === deferredSource.id ? primarySource.inspection.dialect : source.inspection.dialect,
-        format: source.id === deferredSource.id ? primarySource.format : source.format,
-        name: source.id === deferredSource.id ? primarySource.name : source.name,
-        text: source.id === deferredSource.id ? primarySource.text : source.text,
-      })),
-      jsonWarnings,
-    )
+    void loadDuckDbBrowserModule()
+      .then(({ runDuckDbPreview }) =>
+        runDuckDbPreview(
+          duckDbChain,
+          sources.map((source) => ({
+            dialect:
+              source.id === deferredSource.id
+                ? primarySource.inspection.dialect
+                : source.inspection.dialect,
+            format: source.id === deferredSource.id ? primarySource.format : source.format,
+            name: source.id === deferredSource.id ? primarySource.name : source.name,
+            text: source.id === deferredSource.id ? primarySource.text : source.text,
+          })),
+          jsonWarnings,
+        ),
+      )
       .then((result) => {
         if (cancelled) {
           return;
@@ -555,6 +599,7 @@ export function App() {
         };
       }
 
+      const { exportDuckDbParquet } = await loadDuckDbBrowserModule();
       const parquetBuffer = await exportDuckDbParquet(
         {
           input: [{ format: primarySource.format, ref: primarySource.name }],
@@ -635,8 +680,9 @@ export function App() {
         </a>
       </header>
 
-      <section className="hero-grid">
-        <div className="panel">
+      <main>
+        <section className="hero-grid">
+          <div className="panel">
           <div className="panel-header">
             <FileCog size={18} />
             <h2>Inputs</h2>
@@ -868,7 +914,7 @@ export function App() {
           </div>
         </div>
 
-        <div className="panel">
+          <div className="panel">
           <div className="panel-header">
             <Rows4 size={18} />
             <h2>Chain editor</h2>
@@ -986,7 +1032,7 @@ export function App() {
           </div>
         </div>
 
-        <div className="panel">
+          <div className="panel">
           <div className="panel-header">
             <Database size={18} />
             <h2>Result preview</h2>
@@ -1127,23 +1173,24 @@ export function App() {
             </div>
           )}
         </div>
-      </section>
+        </section>
 
-      <section className="log-panel">
-        <div className="panel-header">
-          <Logs size={18} />
-          <h2>Row error log</h2>
-        </div>
-        {previewWarnings.length ? (
-          <ul className="warning-list">
-            {previewWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No row warnings for the current preview.</p>
-        )}
-      </section>
+        <section className="log-panel">
+          <div className="panel-header">
+            <Logs size={18} />
+            <h2>Row error log</h2>
+          </div>
+          {previewWarnings.length ? (
+            <ul className="warning-list">
+              {previewWarnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No row warnings for the current preview.</p>
+          )}
+        </section>
+      </main>
     </div>
   );
 }
