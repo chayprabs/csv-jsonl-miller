@@ -115,7 +115,7 @@ describe('sample registry', () => {
           opts: { rightSource: 'users.csv', leftKey: 'user_id', rightKey: 'id' },
         },
         {
-          kind: 'stats2',
+          kind: 'stats1',
           opts: { spec: 'count,*;p95,duration_ms then group-by plan' },
         },
       ],
@@ -140,6 +140,34 @@ describe('sample registry', () => {
       { plan: 'pro', 'count_*': '2', p95_duration_ms: '180' },
       { plan: 'free', 'count_*': '1', p95_duration_ms: '200' },
     ]);
+  });
+
+  it('executes bivariate stats2 aggregations', () => {
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'pairs.csv' }],
+      verbs: [{ kind: 'stats2', opts: { spec: 'corr,x,y;cov,x,y then group-by segment' } }],
+      output: { format: 'csv' },
+    };
+
+    const result = executeVerbChain(chain, [
+      {
+        name: 'pairs.csv',
+        format: 'csv',
+        text: 'x,y,segment\n1,2,a\n2,4,a\n3,7,a\n4,8,b\n5,10,b\n6,13,b\n',
+      },
+    ]);
+
+    expect(result.preview.columns).toEqual(['segment', 'x_y_corr', 'x_y_cov']);
+    expect(result.preview.rows[0]).toEqual({
+      segment: 'a',
+      x_y_corr: '0.9933992677987827',
+      x_y_cov: '2.5',
+    });
+    expect(result.preview.rows[1]).toEqual({
+      segment: 'b',
+      x_y_corr: '0.9933992677987843',
+      x_y_cov: '2.5',
+    });
   });
 
   it('executes Miller-style unsparsify, nest, and unnest', () => {

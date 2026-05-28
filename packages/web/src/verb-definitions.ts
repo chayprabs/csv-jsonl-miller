@@ -54,8 +54,8 @@ export const VERB_DEFINITIONS: VerbDefinition[] = [
   },
   {
     kind: 'stats2',
-    summary: 'Multi-pass grouped stats with percentiles.',
-    fields: [{ key: 'spec', label: 'Stats', placeholder: 'p95,duration_ms then group-by path' }],
+    summary: 'Bivariate stats such as correlation and covariance.',
+    fields: [{ key: 'spec', label: 'Stats', placeholder: 'corr,x,y;cov,x,y then group-by segment' }],
   },
   {
     kind: 'reorder',

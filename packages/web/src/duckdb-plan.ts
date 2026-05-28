@@ -270,8 +270,9 @@ function compileStep(currentSql: string, step: Verb, tableMap: Map<string, strin
     case 'sort':
       return compileSortStep(currentSql, step);
     case 'stats1':
-    case 'stats2':
       return compileStatsStep(currentSql, step);
+    case 'stats2':
+      return null;
     case 'reorder':
       return compileReorderStep(currentSql, step);
     default:

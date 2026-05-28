@@ -326,6 +326,25 @@ describeIfMlr('Miller reference parity', () => {
     expect(actual).toEqual(expected);
   });
 
+  it('matches Miller for stats2', async () => {
+    const pairsCsv = ['x,y,segment', '1,2,a', '2,4,a', '3,7,a', '4,8,b', '5,10,b', '6,13,b', ''].join('\n');
+    const chain: VerbChain = {
+      input: [{ format: 'csv', ref: 'pairs.csv' }],
+      verbs: [{ kind: 'stats2', opts: { spec: 'corr,x,y;cov,x,y then group-by segment' } }],
+      output: { format: 'csv' },
+    };
+
+    const actual = normalizeRows(
+      executeVerbChain(chain, [{ name: 'pairs.csv', format: 'csv', text: pairsCsv }]).rows,
+    );
+    const expected = await runMlr(
+      ['stats2', '-a', 'corr,cov', '-f', 'x,y', '-g', 'segment'],
+      [{ name: 'pairs.csv', text: pairsCsv }],
+    );
+
+    expect(actual).toEqual(expected);
+  });
+
   it('matches Miller for reorder', async () => {
     const chain: VerbChain = {
       input: [{ format: 'csv', ref: 'orders.csv' }],

@@ -498,6 +498,148 @@ function applyStats(rows: DataRow[], spec: string): DataRow[] {
   });
 }
 
+interface ParsedBivariateAggregation {
+  fn: string;
+  xField: string;
+  yField: string;
+}
+
+interface BivariateAccumulator {
+  count: number;
+  sampleRow: DataRow;
+  sumX: number;
+  sumX2: number;
+  sumXY: number;
+  sumY: number;
+  sumY2: number;
+}
+
+function parseBivariateAggregationSpec(
+  spec: string,
+): { aggregations: ParsedBivariateAggregation[]; groupBy: string[] } {
+  const [aggregationPart, groupByPart] = spec.split(/\s+then\s+group-by\s+/i);
+  const aggregations = aggregationPart
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [fn, xField, yField] = part.split(',').map((token) => token.trim());
+      return { fn, xField, yField };
+    });
+
+  return {
+    aggregations,
+    groupBy: groupByPart ? parseFieldsSpec(groupByPart) : [],
+  };
+}
+
+function covariance(accumulator: BivariateAccumulator): number {
+  if (accumulator.count <= 1) {
+    return 0;
+  }
+
+  const meanX = accumulator.sumX / accumulator.count;
+  const meanY = accumulator.sumY / accumulator.count;
+  return (
+    (accumulator.sumXY - accumulator.count * meanX * meanY) / (accumulator.count - 1)
+  );
+}
+
+function correlation(accumulator: BivariateAccumulator): number {
+  if (accumulator.count <= 1) {
+    return 0;
+  }
+
+  const meanX = accumulator.sumX / accumulator.count;
+  const meanY = accumulator.sumY / accumulator.count;
+  const centeredXY = accumulator.sumXY - accumulator.count * meanX * meanY;
+  const centeredXX = accumulator.sumX2 - accumulator.count * meanX * meanX;
+  const centeredYY = accumulator.sumY2 - accumulator.count * meanY * meanY;
+  const denominator = Math.sqrt(centeredXX * centeredYY);
+
+  if (!Number.isFinite(denominator) || denominator === 0) {
+    return 0;
+  }
+
+  return centeredXY / denominator;
+}
+
+function applyStats2(rows: DataRow[], spec: string): DataRow[] {
+  const { aggregations, groupBy } = parseBivariateAggregationSpec(spec);
+  const groups = new Map<string, BivariateAccumulator[]>();
+
+  for (const row of rows) {
+    const key = JSON.stringify(groupBy.map((field) => row[field] ?? ''));
+    const groupAccumulators =
+      groups.get(key) ??
+      aggregations.map(() => ({
+        count: 0,
+        sampleRow: row,
+        sumX: 0,
+        sumX2: 0,
+        sumXY: 0,
+        sumY: 0,
+        sumY2: 0,
+      }));
+
+    for (let index = 0; index < aggregations.length; index += 1) {
+      const aggregation = aggregations[index];
+      const accumulator = groupAccumulators[index];
+      const xRaw = row[aggregation.xField];
+      const yRaw = row[aggregation.yField];
+      const x = typeof xRaw === 'number' ? xRaw : Number(xRaw);
+      const y = typeof yRaw === 'number' ? yRaw : Number(yRaw);
+
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        continue;
+      }
+
+      accumulator.count += 1;
+      accumulator.sumX += x;
+      accumulator.sumX2 += x * x;
+      accumulator.sumXY += x * y;
+      accumulator.sumY += y;
+      accumulator.sumY2 += y * y;
+    }
+
+    groups.set(key, groupAccumulators);
+  }
+
+  return Array.from(groups.values()).map((groupAccumulators) => {
+    const next: DataRow = {};
+    const sampleRow = groupAccumulators[0]?.sampleRow ?? {};
+
+    for (const field of groupBy) {
+      next[field] = sampleRow[field] ?? '';
+    }
+
+    for (let index = 0; index < aggregations.length; index += 1) {
+      const aggregation = aggregations[index];
+      const accumulator = groupAccumulators[index];
+      const outputKey = `${aggregation.xField}_${aggregation.yField}_${aggregation.fn}`;
+
+      switch (aggregation.fn) {
+        case 'corr':
+          next[outputKey] = correlation(accumulator);
+          break;
+        case 'cov':
+          next[outputKey] = covariance(accumulator);
+          break;
+        case 'r2': {
+          const corr = correlation(accumulator);
+          next[outputKey] = corr * corr;
+          break;
+        }
+        default:
+          next[outputKey] = '';
+          break;
+      }
+    }
+
+    return next;
+  });
+}
+
 function applyReorder(rows: DataRow[], fieldsSpec: string): DataRow[] {
   const leadFields = parseFieldsSpec(fieldsSpec);
 
@@ -654,8 +796,10 @@ export function executeVerbChain(chain: VerbChain, sources: ChainSource[]): Exec
         current = { columns: current.columns, rows: applySort(current.rows, getStepText(step, 'fields')) };
         break;
       case 'stats1':
-      case 'stats2':
         current = { columns: current.columns, rows: applyStats(current.rows, getStepText(step, 'spec')) };
+        break;
+      case 'stats2':
+        current = { columns: current.columns, rows: applyStats2(current.rows, getStepText(step, 'spec')) };
         break;
       case 'reorder':
         current = { columns: current.columns, rows: applyReorder(current.rows, getStepText(step, 'fields')) };

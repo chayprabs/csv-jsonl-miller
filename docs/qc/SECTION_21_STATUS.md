@@ -44,8 +44,8 @@ It is not yet a qualified release record.
   `pnpm audit:privacy` now records `docs/qc/benchmarks/browser-privacy.json`, showing no worker requests, no cross-origin requests, and no IndexedDB/localStorage/sessionStorage writes during a normal browser-side sample transform.
   Worker responses and `/health` continue to document `artifactTtlSeconds=900` for native fallback paths, and the worker API now enforces `Cache-Control: no-store` on `/health` and `/v1/run` responses.
 - [ ] 21.14 Full per-verb correctness vs Miller reference.
-  `packages/core/test/miller-reference.test.ts` now verifies `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `reorder`, and `unsparsify` against a real local `mlr` binary when available.
-  Remaining parity gaps are `stats2`, `nest`, and `unnest`.
+  `packages/core/test/miller-reference.test.ts` now verifies `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `stats2`, `reorder`, and `unsparsify` against a real local `mlr` binary when available.
+  Remaining parity gaps are `nest` and `unnest`.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
   Pages deployment is now live on GitHub Pages, and the worker image publish workflow is green on `main`.
   Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint or npm package evidence.
