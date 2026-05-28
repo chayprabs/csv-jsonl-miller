@@ -126,6 +126,7 @@ async function runMlr(
   args: string[],
   files: FixtureFile[],
   aliasMap: AliasMap = {},
+  inputFormat: 'csv' | 'json' = 'csv',
   outputFormat: 'csv' | 'json' = 'csv',
   appendStagedFiles = true,
 ): Promise<Array<Record<string, string>>> {
@@ -147,7 +148,7 @@ async function runMlr(
     const result = spawnSync(
       mlrBinary,
       [
-        '--csv',
+        inputFormat === 'json' ? '--ijson' : '--csv',
         outputFormat === 'json' ? '--ojson' : '--ocsv',
         ...resolvedArgs,
         ...(appendStagedFiles ? filePaths : []),
@@ -280,6 +281,7 @@ describeIfMlr('Miller reference parity', () => {
         { name: 'users.csv', text: usersCsv },
       ],
       {},
+      'csv',
       'json',
       false,
     );
@@ -318,6 +320,7 @@ describeIfMlr('Miller reference parity', () => {
       ['stats1', '-a', 'sum,count', '-f', 'total', '-g', 'category'],
       [{ name: 'orders.csv', text: ordersCsv }],
       { total_count: 'count_total', total_sum: 'sum_total' },
+      'csv',
     );
 
     expect(actual).toEqual(expected);
@@ -336,6 +339,28 @@ describeIfMlr('Miller reference parity', () => {
     const expected = await runMlr(['reorder', '-f', 'total,category'], [
       { name: 'orders.csv', text: ordersCsv },
     ]);
+
+    expect(actual).toEqual(expected);
+  });
+
+  it('matches Miller for unsparsify', async () => {
+    const sparseJsonl = '{"id":"1","value":10}\n{"id":"2","city":"Delhi"}\n{"id":"3"}\n';
+    const chain: VerbChain = {
+      input: [{ format: 'jsonl', ref: 'sparse.jsonl' }],
+      verbs: [{ kind: 'unsparsify', opts: { fillWith: 'missing' } }],
+      output: { format: 'jsonl' },
+    };
+
+    const actual = normalizeRows(
+      executeVerbChain(chain, [{ name: 'sparse.jsonl', format: 'jsonl', text: sparseJsonl }]).rows,
+    );
+    const expected = await runMlr(
+      ['unsparsify', '--fill-with', 'missing'],
+      [{ name: 'sparse.jsonl', text: sparseJsonl }],
+      {},
+      'json',
+      'json',
+    );
 
     expect(actual).toEqual(expected);
   });

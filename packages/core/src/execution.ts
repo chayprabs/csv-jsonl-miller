@@ -521,20 +521,18 @@ function applyReorder(rows: DataRow[], fieldsSpec: string): DataRow[] {
 }
 
 function applyUnsparsify(rows: DataRow[], fillWith: string): DataRow[] {
-  const carryForward: DataRow = {};
+  const fields = collectColumns(rows);
 
   return rows.map((row) => {
     const next: DataRow = {};
 
-    for (const key of collectColumns([carryForward, row])) {
-      const value = row[key];
-
-      if (value === '' || value === undefined || value === null) {
-        next[key] = carryForward[key] ?? fillWith;
-      } else {
-        next[key] = value;
-        carryForward[key] = value;
+    for (const key of fields) {
+      if (Object.prototype.hasOwnProperty.call(row, key)) {
+        next[key] = row[key];
+        continue;
       }
+
+      next[key] = fillWith;
     }
 
     return next;
