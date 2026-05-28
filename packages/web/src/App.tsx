@@ -18,7 +18,7 @@ import {
   type PreviewTable,
   type VerbChain,
 } from '@csvshape/core';
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
@@ -30,6 +30,8 @@ import {
 } from './escalation';
 import { getRouteSeo } from './seo';
 import { getVerbDefinition } from './verb-definitions';
+
+const MonacoTextEditor = lazy(() => import('./MonacoTextEditor'));
 
 interface LoadedSource {
   id: string;
@@ -897,12 +899,15 @@ export function App() {
               </div>
               <label className="field">
                 <span>jq-style query</span>
-                <textarea
-                  rows={4}
-                  value={jsonQuery}
-                  placeholder='select(.status == 500) | {user_id:.user_id,status:.status}'
-                  onChange={(event) => setJsonQuery(event.target.value)}
-                />
+                <Suspense fallback={<div className="editor-fallback">Loading jq editor...</div>}>
+                  <MonacoTextEditor
+                    height={180}
+                    language="javascript"
+                    placeholder="select(.status == 500) | {user_id:.user_id,status:.status}"
+                    value={jsonQuery}
+                    onChange={setJsonQuery}
+                  />
+                </Suspense>
               </label>
             </div>
           ) : null}
@@ -1110,20 +1115,23 @@ export function App() {
                   ) : (
                     <label className="field">
                       <span>Raw expression</span>
-                      <textarea
-                        rows={4}
-                        value={step.rawExpression}
-                        placeholder={`mlr ${step.kind} ...`}
-                        onChange={(event) =>
-                          setChain((current) =>
-                            current.map((entry) =>
-                              entry.id === step.id
-                                ? { ...entry, rawExpression: event.target.value }
-                                : entry,
-                            ),
-                          )
-                        }
-                      />
+                      <Suspense fallback={<div className="editor-fallback">Loading raw editor...</div>}>
+                        <MonacoTextEditor
+                          height={180}
+                          language="shell"
+                          placeholder={`mlr ${step.kind} ...`}
+                          value={step.rawExpression}
+                          onChange={(nextValue) =>
+                            setChain((current) =>
+                              current.map((entry) =>
+                                entry.id === step.id
+                                  ? { ...entry, rawExpression: nextValue }
+                                  : entry,
+                              ),
+                            )
+                          }
+                        />
+                      </Suspense>
                     </label>
                   )}
                 </div>

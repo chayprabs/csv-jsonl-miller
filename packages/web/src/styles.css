@@ -483,6 +483,43 @@ button {
   resize: vertical;
 }
 
+.editor-fallback,
+.monaco-loading {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  border: 1px solid rgba(244, 240, 232, 0.12);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.86);
+  color: rgba(244, 240, 232, 0.64);
+}
+
+.monaco-shell {
+  position: relative;
+  border: 1px solid rgba(244, 240, 232, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.monaco-shell .monaco-editor,
+.monaco-shell .monaco-editor-background,
+.monaco-shell .margin {
+  background: #0f172a !important;
+}
+
+.monaco-placeholder {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  right: 18px;
+  pointer-events: none;
+  color: rgba(244, 240, 232, 0.34);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .metadata-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
