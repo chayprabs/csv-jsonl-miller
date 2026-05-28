@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -34,17 +34,25 @@ afterEach(async () => {
 
 async function createFakeMlr(outputText: string) {
   const tempDir = await mkdtemp(path.join(tmpdir(), 'csvshape-mlr-test-'));
-  const scriptPath = path.join(tempDir, 'fake-mlr.cmd');
   tempPaths.push(tempDir);
-  await writeFile(
-    scriptPath,
-    `@echo off\r\nsetlocal\r\n(\r\n${outputText
-      .trimEnd()
-      .split('\n')
-      .map((line) => `echo ${line}`)
-      .join('\r\n')}\r\n)\r\n`,
-    'utf8',
-  );
+  const scriptPath = path.join(tempDir, process.platform === 'win32' ? 'fake-mlr.cmd' : 'fake-mlr');
+  const lines = outputText.trimEnd().split('\n');
+
+  if (process.platform === 'win32') {
+    await writeFile(
+      scriptPath,
+      `@echo off\r\nsetlocal\r\n(\r\n${lines.map((line) => `echo ${line}`).join('\r\n')}\r\n)\r\n`,
+      'utf8',
+    );
+  } else {
+    await writeFile(
+      scriptPath,
+      `#!/bin/sh\ncat <<'EOF'\n${lines.join('\n')}\nEOF\n`,
+      'utf8',
+    );
+    await chmod(scriptPath, 0o755);
+  }
+
   return scriptPath;
 }
 
