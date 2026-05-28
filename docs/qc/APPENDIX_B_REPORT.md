@@ -49,7 +49,9 @@ Blocked:
   Worker-native Miller now has a repeatable smoke run via `pnpm --filter @csvshape/worker smoke:mlr`, which returns `engine=mlr-native`, `rowCount=3`, and CSV output for the paid-order ecommerce subset in `docs/qc/benchmarks/native-mlr-smoke.json`.
 - 21.12 Browser auto mode now routes simple single-source chains to the faster TypeScript preview path, and the benchmark now runs against a production preview build instead of the dev server, but the browser p95 is still above target.
 - 21.13 No explicit privacy verification log yet.
-- 21.14 No Miller-reference parity suite yet.
+- 21.14 Miller-reference parity is only partial so far.
+  `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for `cat`, `filter`, `put`, `cut`, `sort`, `stats1`, and `reorder`.
+  Remaining verb gaps are `join`, `stats2`, `unsparsify`, `nest`, and `unnest`.
 - 21.15 No hosted deployment, npm package, or worker image evidence yet.
 - 21.19 Final qualification blocked on unresolved items above.
 
