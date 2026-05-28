@@ -48,6 +48,8 @@ function probeMlrBinary(): boolean {
   const result = spawnSync('mlr', ['--version'], {
     encoding: 'utf8',
     shell: false,
+    timeout: 250,
+    windowsHide: true,
   });
 
   return result.status === 0;

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@csvshape/core": "workspace:*",
+    "@duckdb/duckdb-wasm": "1.33.1-dev45.0",
     "@tailwindcss/vite": "^4.1.17",
     "@tanstack/react-query": "^5.90.5",
     "clsx": "^2.1.1",

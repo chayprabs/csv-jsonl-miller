@@ -11,15 +11,18 @@ import {
   inspectInput,
   SAMPLE_SPECS,
   serializeRows,
+  type DataRow,
   type DialectDetection,
   type FileFormat,
   type InputInspection,
+  type PreviewTable,
   type VerbChain,
 } from '@csvshape/core';
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
+import { exportDuckDbParquet, runDuckDbPreview } from './duckdb-browser';
 import {
   buildEscalationMessage,
   inferFormat,
@@ -118,6 +121,17 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   URL.revokeObjectURL(url);
 }
 
+function downloadBinaryFile(filename: string, content: Uint8Array, mimeType: string) {
+  const normalized = new Uint8Array(content);
+  const blob = new Blob([normalized.buffer], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [sources, setSources] = useState<LoadedSource[]>([]);
@@ -132,6 +146,15 @@ export function App() {
   const [outputFormat, setOutputFormat] = useState<FileFormat>('csv');
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
   const [escalationFiles, setEscalationFiles] = useState<EscalationFile[]>([]);
+  const [duckDbExecution, setDuckDbExecution] = useState<{
+    columns: string[];
+    preview: PreviewTable;
+    rows: DataRow[];
+    usingDuckDb: boolean;
+    warnings: string[];
+  } | null>(null);
+  const [executionEngine, setExecutionEngine] = useState<'duckdb-wasm' | 'typescript'>('typescript');
+  const [engineMessage, setEngineMessage] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
   const deferredSource = useDeferredValue(selectedSource);
@@ -319,19 +342,16 @@ export function App() {
     }
 
     let primarySource = deferredSource;
-    let jsonWarnings: string[] = [];
+    const jsonWarnings: string[] = [];
 
-    if (
-      (deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') &&
-      deferredJsonQuery.trim()
-    ) {
+    if ((deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') && deferredJsonQuery.trim()) {
       const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
 
       primarySource = {
         ...deferredSource,
         text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
       };
-      jsonWarnings = queried.warnings;
+      jsonWarnings.push(...queried.warnings);
     }
 
     const chainDefinition: VerbChain = {
@@ -360,28 +380,112 @@ export function App() {
     };
   }, [deferredChain, deferredJsonQuery, deferredSource, outputFormat, sources]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!deferredSource) {
+      setDuckDbExecution(null);
+      setExecutionEngine('typescript');
+      setEngineMessage(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    let primarySource = deferredSource;
+    const jsonWarnings: string[] = [];
+
+    if ((deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') && deferredJsonQuery.trim()) {
+      const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
+
+      primarySource = {
+        ...deferredSource,
+        text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
+      };
+      jsonWarnings.push(...queried.warnings);
+    }
+
+    const duckDbChain: VerbChain = {
+      input: [{ format: primarySource.format, ref: primarySource.name }],
+      verbs: deferredChain.map((step) => ({
+        kind: step.kind,
+        opts: step.opts,
+        rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
+      })),
+      output: { format: outputFormat },
+    };
+
+    void runDuckDbPreview(
+      duckDbChain,
+      sources.map((source) => ({
+        dialect: source.id === deferredSource.id ? primarySource.inspection.dialect : source.inspection.dialect,
+        format: source.id === deferredSource.id ? primarySource.format : source.format,
+        name: source.id === deferredSource.id ? primarySource.name : source.name,
+        text: source.id === deferredSource.id ? primarySource.text : source.text,
+      })),
+      jsonWarnings,
+    )
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (result.usingDuckDb) {
+          setDuckDbExecution({
+            columns: result.columns,
+            preview: result.preview,
+            rows: result.rows,
+            usingDuckDb: true,
+            warnings: result.warnings,
+          });
+          setExecutionEngine('duckdb-wasm');
+          setEngineMessage('DuckDB-WASM preview is active for the current chain.');
+          return;
+        }
+
+        setDuckDbExecution(null);
+        setExecutionEngine('typescript');
+        setEngineMessage(result.planReason);
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+
+        setDuckDbExecution(null);
+        setExecutionEngine('typescript');
+        setEngineMessage(error instanceof Error ? error.message : 'DuckDB-WASM preview unavailable.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deferredChain, deferredJsonQuery, deferredSource, outputFormat, sources]);
+
   const reshaped = useMemo(() => {
-    if (!execution) {
+    const baseExecution = duckDbExecution ?? execution;
+
+    if (!baseExecution) {
       return null;
     }
 
     if (reshape.mode === 'none') {
-      return execution;
+      return baseExecution;
     }
 
-    const result = applyReshape(execution.rows, reshape);
+    const result = applyReshape(baseExecution.rows, reshape);
 
     return {
-      ...execution,
+      ...baseExecution,
       rows: result.rows,
       preview: result.preview,
     };
-  }, [execution, reshape]);
+  }, [duckDbExecution, execution, reshape]);
 
-  const previewRows = reshaped?.preview.rows ?? execution?.preview.rows ?? [];
-  const previewColumns = reshaped?.preview.columns ?? execution?.preview.columns ?? [];
-  const previewWarnings = reshaped?.warnings ?? execution?.warnings ?? [];
-  const exportRows = reshaped?.rows ?? execution?.rows ?? [];
+  const previewRows = reshaped?.preview.rows ?? duckDbExecution?.preview.rows ?? execution?.preview.rows ?? [];
+  const previewColumns = reshaped?.preview.columns ?? duckDbExecution?.preview.columns ?? execution?.preview.columns ?? [];
+  const previewWarnings = reshaped?.warnings ?? duckDbExecution?.warnings ?? execution?.warnings ?? [];
+  const exportRows = reshaped?.rows ?? duckDbExecution?.rows ?? execution?.rows ?? [];
 
   const chainDefinition = useMemo<VerbChain>(
     () => ({
@@ -438,6 +542,49 @@ export function App() {
 
   const chainScript = useMemo(() => buildReplayableChainScript(chainDefinition), [chainDefinition]);
   const exportContent = useMemo(() => serializeRows(exportRows, outputFormat), [exportRows, outputFormat]);
+
+  async function handleDownloadData() {
+    if (outputFormat === 'parquet' && deferredSource) {
+      let primarySource = deferredSource;
+
+      if ((deferredSource.format === 'jsonl' || deferredSource.format === 'ndjson') && deferredJsonQuery.trim()) {
+        const queried = applyJsonQuery(deferredSource.text, deferredJsonQuery);
+        primarySource = {
+          ...deferredSource,
+          text: queried.rows.map((row) => JSON.stringify(row)).join('\n'),
+        };
+      }
+
+      const parquetBuffer = await exportDuckDbParquet(
+        {
+          input: [{ format: primarySource.format, ref: primarySource.name }],
+          verbs: deferredChain.map((step) => ({
+            kind: step.kind,
+            opts: step.opts,
+            rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
+          })),
+          output: { format: outputFormat },
+        },
+        sources.map((source) => ({
+          dialect: source.id === deferredSource.id ? primarySource.inspection.dialect : source.inspection.dialect,
+          format: source.id === deferredSource.id ? primarySource.format : source.format,
+          name: source.id === deferredSource.id ? primarySource.name : source.name,
+          text: source.id === deferredSource.id ? primarySource.text : source.text,
+        })),
+      );
+
+      if (parquetBuffer) {
+        downloadBinaryFile('csvshape-output.parquet', parquetBuffer, 'application/octet-stream');
+        return;
+      }
+    }
+
+    downloadTextFile(
+      `csvshape-output.${fileExtension(outputFormat)}`,
+      exportContent,
+      outputFormat === 'jsonl' ? 'application/x-ndjson' : 'text/plain;charset=utf-8',
+    );
+  }
 
   function addVerb(kind: (typeof VERB_PALETTE)[number]) {
     const definition = getVerbDefinition(kind);
@@ -871,7 +1018,12 @@ export function App() {
                   <span>Rows</span>
                   <strong>{exportRows.length}</strong>
                 </div>
+                <div>
+                  <span>Engine</span>
+                  <strong>{executionEngine === 'duckdb-wasm' ? 'DuckDB-WASM' : 'TypeScript'}</strong>
+                </div>
               </div>
+              {engineMessage ? <p className="worker-message">{engineMessage}</p> : null}
 
               <div className="dialect-controls">
                 <label className="field inline-field">
@@ -889,13 +1041,7 @@ export function App() {
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() =>
-                    downloadTextFile(
-                      `csvshape-output.${fileExtension(outputFormat)}`,
-                      exportContent,
-                      outputFormat === 'jsonl' ? 'application/x-ndjson' : 'text/plain;charset=utf-8',
-                    )
-                  }
+                  onClick={() => void handleDownloadData()}
                 >
                   Download data
                 </button>
