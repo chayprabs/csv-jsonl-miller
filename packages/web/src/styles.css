@@ -228,9 +228,95 @@ button {
   margin-top: 24px;
 }
 
+.preview-state.compact {
+  min-height: 84px;
+}
+
 .preview-stack {
   display: grid;
   gap: 16px;
+}
+
+.chain-stack {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.chain-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(244, 240, 232, 0.1);
+  cursor: grab;
+}
+
+.chain-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.chain-card-header strong,
+.field span,
+.chain-index {
+  display: block;
+}
+
+.chain-index {
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(244, 240, 232, 0.56);
+}
+
+.mode-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.toggle {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: transparent;
+  color: inherit;
+}
+
+.toggle.active {
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.field-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  color: rgba(244, 240, 232, 0.72);
+  font-size: 0.85rem;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid rgba(244, 240, 232, 0.16);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.86);
+  color: inherit;
+  resize: vertical;
 }
 
 .metadata-grid {

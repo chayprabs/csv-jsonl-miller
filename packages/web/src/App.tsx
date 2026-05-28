@@ -12,6 +12,7 @@ import { startTransition, useDeferredValue, useRef, useState } from 'react';
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
+import { getVerbDefinition } from './verb-definitions';
 
 interface LoadedSource {
   id: string;
@@ -20,6 +21,14 @@ interface LoadedSource {
   format: FileFormat;
   text: string;
   inspection: InputInspection;
+}
+
+interface ChainStep {
+  id: string;
+  kind: (typeof VERB_PALETTE)[number];
+  mode: 'form' | 'raw';
+  opts: Record<string, string>;
+  rawExpression: string;
 }
 
 const WORKER_BASE_URL = import.meta.env.VITE_WORKER_BASE_URL ?? 'http://localhost:8787';
@@ -69,6 +78,8 @@ export function App() {
   const [workerUrl, setWorkerUrl] = useState('');
   const [workerMessage, setWorkerMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [chain, setChain] = useState<ChainStep[]>([]);
+  const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
   const deferredSource = useDeferredValue(selectedSource);
@@ -160,6 +171,43 @@ export function App() {
 
   const previewRows = deferredSource?.inspection.preview.rows ?? [];
   const previewColumns = deferredSource?.inspection.preview.columns ?? [];
+
+  function addVerb(kind: (typeof VERB_PALETTE)[number]) {
+    const definition = getVerbDefinition(kind);
+    const nextStep: ChainStep = {
+      id: crypto.randomUUID(),
+      kind,
+      mode: 'form',
+      opts: definition.fields.reduce<Record<string, string>>((accumulator, field) => {
+        accumulator[field.key] = '';
+        return accumulator;
+      }, {}),
+      rawExpression: '',
+    };
+
+    setChain((current) => [...current, nextStep]);
+  }
+
+  function reorderChain(targetStepId: string) {
+    if (!draggedStepId || draggedStepId === targetStepId) {
+      return;
+    }
+
+    setChain((current) => {
+      const draggedIndex = current.findIndex((step) => step.id === draggedStepId);
+      const targetIndex = current.findIndex((step) => step.id === targetStepId);
+
+      if (draggedIndex < 0 || targetIndex < 0) {
+        return current;
+      }
+
+      const next = [...current];
+      const [dragged] = next.splice(draggedIndex, 1);
+      next.splice(targetIndex, 0, dragged);
+      return next;
+    });
+    setDraggedStepId(null);
+  }
 
   return (
     <div className="app-shell">
@@ -260,15 +308,118 @@ export function App() {
         <div className="panel">
           <div className="panel-header">
             <Rows4 size={18} />
-            <h2>Verb palette</h2>
+            <h2>Chain editor</h2>
           </div>
-          <p>Chain building starts here. Verb execution wiring lands in the next pass.</p>
+          <p>Add verbs from the palette, reorder them, and switch each step between form and raw modes.</p>
           <div className="verb-grid">
             {VERB_PALETTE.map((verb) => (
-              <button key={verb} type="button" className="verb-chip">
+              <button key={verb} type="button" className="verb-chip" onClick={() => addVerb(verb)}>
                 {verb}
               </button>
-              ))}
+            ))}
+          </div>
+
+          <div className="chain-stack">
+            {chain.length === 0 ? <div className="preview-state compact">No verbs in the chain yet.</div> : null}
+            {chain.map((step, index) => {
+              const definition = getVerbDefinition(step.kind);
+
+              return (
+                <div
+                  key={step.id}
+                  className="chain-card"
+                  draggable
+                  onDragStart={() => setDraggedStepId(step.id)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => reorderChain(step.id)}
+                >
+                  <div className="chain-card-header">
+                    <div>
+                      <span className="chain-index">Step {index + 1}</span>
+                      <strong>{step.kind}</strong>
+                    </div>
+                    <div className="mode-toggle">
+                      <button
+                        type="button"
+                        className={step.mode === 'form' ? 'toggle active' : 'toggle'}
+                        onClick={() =>
+                          setChain((current) =>
+                            current.map((entry) =>
+                              entry.id === step.id ? { ...entry, mode: 'form' } : entry,
+                            ),
+                          )
+                        }
+                      >
+                        Form
+                      </button>
+                      <button
+                        type="button"
+                        className={step.mode === 'raw' ? 'toggle active' : 'toggle'}
+                        onClick={() =>
+                          setChain((current) =>
+                            current.map((entry) =>
+                              entry.id === step.id ? { ...entry, mode: 'raw' } : entry,
+                            ),
+                          )
+                        }
+                      >
+                        Raw
+                      </button>
+                    </div>
+                  </div>
+
+                  <p>{definition.summary}</p>
+
+                  {step.mode === 'form' ? (
+                    <div className="field-grid">
+                      {definition.fields.map((field) => (
+                        <label key={field.key} className="field">
+                          <span>{field.label}</span>
+                          <input
+                            type="text"
+                            value={step.opts[field.key] ?? ''}
+                            placeholder={field.placeholder}
+                            onChange={(event) =>
+                              setChain((current) =>
+                                current.map((entry) =>
+                                  entry.id === step.id
+                                    ? {
+                                        ...entry,
+                                        opts: {
+                                          ...entry.opts,
+                                          [field.key]: event.target.value,
+                                        },
+                                      }
+                                    : entry,
+                                ),
+                              )
+                            }
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <label className="field">
+                      <span>Raw expression</span>
+                      <textarea
+                        rows={4}
+                        value={step.rawExpression}
+                        placeholder={`mlr ${step.kind} ...`}
+                        onChange={(event) =>
+                          setChain((current) =>
+                            current.map((entry) =>
+                              entry.id === step.id
+                                ? { ...entry, rawExpression: event.target.value }
+                                : entry,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
