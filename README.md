@@ -21,6 +21,8 @@ pnpm build
 docker compose up --build
 ```
 
+The local worker defaults to `http://localhost:8797`.
+
 ## Release targets
 
 - Static web bundle suitable for Cloudflare Pages.

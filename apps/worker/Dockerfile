@@ -2,13 +2,12 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml tsconfig.base.json eslint.config.js ./
-COPY apps/worker/package.json apps/worker/tsconfig.json ./apps/worker/
+COPY apps/worker/package.json ./
+RUN npm install
 
-RUN corepack enable && pnpm install --filter @csvshape/worker... --frozen-lockfile=false
+COPY apps/worker/src ./src
+COPY apps/worker/tsconfig.json ./tsconfig.json
 
-COPY apps/worker ./apps/worker
+EXPOSE 8797
 
-EXPOSE 8787
-
-CMD ["pnpm", "--filter", "@csvshape/worker", "dev"]
+CMD ["npx", "tsx", "src/index.ts"]

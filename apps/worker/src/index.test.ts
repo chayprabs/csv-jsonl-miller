@@ -5,7 +5,7 @@ describe('worker metadata', () => {
     process.env.WORKER_ARTIFACT_TTL_SECONDS = '900';
     const mod = await import('./index');
 
-    expect(mod.default.port).toBe(8787);
+    expect(mod.default.port).toBe(8797);
   });
 
   it('queues worker fallback jobs with structured metadata', async () => {

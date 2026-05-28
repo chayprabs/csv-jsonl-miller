@@ -40,7 +40,7 @@ app.post('/v1/run', async (context) => {
   );
 });
 
-const port = Number(process.env.PORT ?? 8787);
+const port = Number(process.env.PORT ?? 8797);
 
 export default {
   port,

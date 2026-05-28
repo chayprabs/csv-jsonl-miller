@@ -50,13 +50,13 @@ importers:
       hono:
         specifier: ^4.10.2
         version: 4.12.23
+      tsx:
+        specifier: ^4.20.6
+        version: 4.22.3
       zod:
         specifier: ^4.1.12
         version: 4.4.3
     devDependencies:
-      tsx:
-        specifier: ^4.20.6
-        version: 4.22.3
       vitest:
         specifier: ^4.0.7
         version: 4.1.7(@types/node@24.12.4)(vite@7.3.3(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.3)(yaml@2.9.0))

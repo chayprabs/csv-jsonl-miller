@@ -13,10 +13,10 @@
   "dependencies": {
     "@hono/node-server": "^1.19.6",
     "hono": "^4.10.2",
+    "tsx": "^4.20.6",
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "tsx": "^4.20.6",
     "vitest": "^4.0.7"
   }
 }
