@@ -2,13 +2,15 @@ import {
   buildDelimitedPreview,
   decodeInput,
   detectEncoding,
+  executeVerbChain,
   inspectInput,
   SAMPLE_SPECS,
   type DialectDetection,
   type FileFormat,
   type InputInspection,
+  type VerbChain,
 } from '@csvshape/core';
-import { startTransition, useDeferredValue, useRef, useState } from 'react';
+import { startTransition, useDeferredValue, useMemo, useRef, useState } from 'react';
 import { Database, FileCog, Link2, Logs, Rows4, Upload } from 'lucide-react';
 
 import { VERB_PALETTE } from './catalog';
@@ -83,6 +85,7 @@ export function App() {
 
   const selectedSource = sources.find((source) => source.id === selectedSourceId) ?? null;
   const deferredSource = useDeferredValue(selectedSource);
+  const deferredChain = useDeferredValue(chain);
 
   async function loadBytes(name: string, sourceType: LoadedSource['sourceType'], bytes: Uint8Array) {
     const format = inferFormat(name);
@@ -169,8 +172,42 @@ export function App() {
     }
   }
 
-  const previewRows = deferredSource?.inspection.preview.rows ?? [];
-  const previewColumns = deferredSource?.inspection.preview.columns ?? [];
+  const execution = useMemo(() => {
+    if (!deferredSource) {
+      return null;
+    }
+
+    if (deferredChain.length === 0) {
+      return {
+        preview: deferredSource.inspection.preview,
+        warnings: deferredSource.inspection.warnings,
+      };
+    }
+
+    const chainDefinition: VerbChain = {
+      input: [{ format: deferredSource.format, ref: deferredSource.name }],
+      verbs: deferredChain.map((step) => ({
+        kind: step.kind,
+        opts: step.opts,
+        rawExpression: step.mode === 'raw' ? step.rawExpression : undefined,
+      })),
+      output: { format: deferredSource.format },
+    };
+
+    return executeVerbChain(
+      chainDefinition,
+      sources.map((source) => ({
+        name: source.name,
+        format: source.format,
+        text: source.text,
+        dialect: source.inspection.dialect,
+      })),
+    );
+  }, [deferredChain, deferredSource, sources]);
+
+  const previewRows = execution?.preview.rows ?? [];
+  const previewColumns = execution?.preview.columns ?? [];
+  const previewWarnings = [...(execution?.warnings ?? []), ...(deferredSource?.inspection.warnings ?? [])];
 
   function addVerb(kind: (typeof VERB_PALETTE)[number]) {
     const definition = getVerbDefinition(kind);
@@ -297,9 +334,7 @@ export function App() {
                 onClick={() => setSelectedSourceId(source.id)}
               >
                 <strong>{source.name}</strong>
-                <span>
-                  {source.sourceType} · {source.format.toUpperCase()}
-                </span>
+                <span>{`${source.sourceType} · ${source.format.toUpperCase()}`}</span>
               </button>
             ))}
           </div>
@@ -429,7 +464,9 @@ export function App() {
             <h2>Result preview</h2>
           </div>
           {!deferredSource ? (
-            <div className="preview-state">{isLoading ? 'Loading source…' : 'Load a source to inspect preview data.'}</div>
+            <div className="preview-state">
+              {isLoading ? 'Loading source...' : 'Load a source to inspect preview data.'}
+            </div>
           ) : (
             <div className="preview-stack">
               <div className="metadata-grid">
@@ -449,14 +486,25 @@ export function App() {
                   <span>Columns</span>
                   <strong>{previewColumns.length}</strong>
                 </div>
+                <div>
+                  <span>Rows</span>
+                  <strong>{previewRows.length}</strong>
+                </div>
               </div>
 
               {deferredSource.inspection.dialect ? (
                 <div className="dialect-controls">
-                  <div className="dialect-pill">Delimiter: {deferredSource.inspection.dialect.delimiter === '\t' ? 'TAB' : deferredSource.inspection.dialect.delimiter}</div>
+                  <div className="dialect-pill">
+                    Delimiter:{' '}
+                    {deferredSource.inspection.dialect.delimiter === '\t'
+                      ? 'TAB'
+                      : deferredSource.inspection.dialect.delimiter}
+                  </div>
                   <div className="dialect-pill">Quote: {deferredSource.inspection.dialect.quote}</div>
                   <div className="dialect-pill">Escape: {deferredSource.inspection.dialect.escape}</div>
-                  <div className="dialect-pill">Line ending: {deferredSource.inspection.dialect.lineEnding}</div>
+                  <div className="dialect-pill">
+                    Line ending: {deferredSource.inspection.dialect.lineEnding}
+                  </div>
                   <label className="checkbox-row">
                     <input
                       type="checkbox"
@@ -508,9 +556,9 @@ export function App() {
           <Logs size={18} />
           <h2>Row error log</h2>
         </div>
-        {deferredSource?.inspection.warnings.length ? (
+        {previewWarnings.length ? (
           <ul className="warning-list">
-            {deferredSource.inspection.warnings.map((warning) => (
+            {previewWarnings.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}
           </ul>

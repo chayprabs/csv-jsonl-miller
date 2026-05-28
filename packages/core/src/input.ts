@@ -157,7 +157,19 @@ function inferHeader(rows: string[][]): boolean {
   const firstLooksNumeric = firstRow.filter((value) => /^-?\d+(\.\d+)?$/.test(value.trim())).length;
   const secondLooksNumeric = secondRow.filter((value) => /^-?\d+(\.\d+)?$/.test(value.trim())).length;
 
-  return firstLooksNumeric < secondLooksNumeric;
+  if (firstLooksNumeric !== secondLooksNumeric) {
+    return firstLooksNumeric < secondLooksNumeric;
+  }
+
+  const headerish = /^[A-Za-z_][\w .-]*$/;
+  const firstLooksHeaderish =
+    new Set(firstRow.map((value) => value.trim())).size === firstRow.length &&
+    firstRow.every((value) => headerish.test(value.trim()));
+  const secondLooksDataish = secondRow.some(
+    (value) => /\d/.test(value.trim()) || !headerish.test(value.trim()),
+  );
+
+  return firstLooksHeaderish && secondLooksDataish;
 }
 
 export function sniffDialect(text: string): DialectDetection {

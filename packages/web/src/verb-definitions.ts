@@ -37,6 +37,7 @@ export const VERB_DEFINITIONS: VerbDefinition[] = [
     kind: 'join',
     summary: 'Join the current stream against another input.',
     fields: [
+      { key: 'rightSource', label: 'Right source', placeholder: 'users.csv' },
       { key: 'leftKey', label: 'Left key', placeholder: 'user_id' },
       { key: 'rightKey', label: 'Right key', placeholder: 'id' },
     ],
@@ -69,7 +70,10 @@ export const VERB_DEFINITIONS: VerbDefinition[] = [
   {
     kind: 'nest',
     summary: 'Nest multiple fields under a single object.',
-    fields: [{ key: 'into', label: 'Into field', placeholder: 'payload' }],
+    fields: [
+      { key: 'into', label: 'Into field', placeholder: 'payload' },
+      { key: 'fields', label: 'Fields', placeholder: 'city,total,status' },
+    ],
   },
   {
     kind: 'unnest',
