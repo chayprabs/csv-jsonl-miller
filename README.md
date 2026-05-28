@@ -2,6 +2,8 @@
 
 CSVShape stream-processes CSV, TSV, NDJSON, and JSONL in your browser with Miller-style verb chains, joins, pivots, and dialect sniffing. The browser path currently uses DuckDB-WASM plus a TypeScript preview executor, and large files can escalate to a native worker path.
 
+Hosted web app: `https://chayprabs.github.io/csv-jsonl-miller/`
+
 ## UI Preview
 
 Homepage:
@@ -52,7 +54,7 @@ docker compose up --build
 
 The local worker defaults to `http://localhost:8797`.
 
-Current local qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, and the worker throughput gate passes. Remaining blockers are Miller parity completion, browser Miller-WASM evidence, hosted deployment, and final Section 21 closure.
+Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 100k rows, the worker throughput gate passes, and the static app is now live on GitHub Pages. Remaining blockers are hosted worker evidence, Miller parity completion, browser Miller-WASM evidence, and final Section 21 closure.
 
 ## Release targets
 

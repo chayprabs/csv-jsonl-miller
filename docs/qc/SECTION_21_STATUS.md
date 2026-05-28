@@ -1,8 +1,8 @@
 # CSVShape Section 21 Status
 
 Run date: 2026-05-29
-Branch: `cursor/csv-shape-build`
-Status source: local repo verification
+Branch: `main`
+Status source: local repo and hosted deployment verification
 
 This file tracks the current local evidence for `RELEASE_QUALIFICATION_CHECKLIST.md` Section 21.
 It is not yet a qualified release record.
@@ -29,6 +29,9 @@ It is not yet a qualified release record.
 ## Still open before qualification
 
 - [ ] 21.0 Hosted URL and worker deployment evidence.
+  The static app is now hosted at `https://chayprabs.github.io/csv-jsonl-miller/`, and a direct HTTP check returned `200`.
+  GitHub Actions on `main` now show green `CI`, `Deploy Pages`, and `Publish Worker Image` runs for commit `8936ed5`.
+  A hosted worker URL is still missing, so this gate is not fully closed yet.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
   Browser DuckDB-WASM is exercised locally via `pnpm --filter @csvshape/web smoke:duckdb`.
   Worker-native DuckDB execution is covered by local tests, and worker-native Miller now has a repeatable local smoke run via `pnpm --filter @csvshape/worker smoke:mlr` with artifact output in `docs/qc/benchmarks/native-mlr-smoke.json`.
@@ -44,4 +47,6 @@ It is not yet a qualified release record.
   `packages/core/test/miller-reference.test.ts` now verifies `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `reorder`, and `unsparsify` against a real local `mlr` binary when available.
   Remaining parity gaps are `stats2`, `nest`, and `unnest`.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
+  Pages deployment is now live on GitHub Pages, and the worker image publish workflow is green on `main`.
+  Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint or npm package evidence.
 - [ ] 21.19 Final all-green verdict.

@@ -2,9 +2,9 @@
 
 Tool: CSVShape
 Section: 21.CSVShape
-Repo: https://github.com/chayprabs/csv-jsonl-miller @ cursor/csv-shape-build
-Hosted: not yet deployed
-Run at: 2026-05-29T00:00:00+05:30
+Repo: https://github.com/chayprabs/csv-jsonl-miller @ main
+Hosted: https://chayprabs.github.io/csv-jsonl-miller/
+Run at: 2026-05-29T03:50:00+05:30
 Verifier: Codex
 
 Counts:
@@ -40,7 +40,8 @@ Acceptance evidence:
 - Wide-form CSV fixture pivots longer to rows beginning `north/jan/120`, `north/feb/140`, `north/mar/150`, and produces 9 rows total.
 
 Blocked:
-- 21.0 Hosted URL and worker URL are not provisioned yet.
+- 21.0 Hosted web URL now exists and returned `200` at `https://chayprabs.github.io/csv-jsonl-miller/`, and the latest `main` runs for `CI`, `Deploy Pages`, and `Publish Worker Image` all succeeded on commit `8936ed5`.
+  A hosted worker URL is still not provisioned, so this item remains blocked.
 - 21.1 Browser Miller-WASM evidence is still missing.
   Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which loads the ecommerce CSV sample, applies `filter -> stats1`, shows `Engine: DuckDB-WASM`, and captures `docs/qc/screenshots/duckdb-wasm-preview.png`.
   Worker-native DuckDB is packaged via `@duckdb/node-api`, reports `duckdbNative: true` on `/health`, and executes inline CSV/JSONL SQL plus Parquet export in local tests.
@@ -51,7 +52,8 @@ Blocked:
 - 21.14 Miller-reference parity is only partial so far.
   `packages/core/test/miller-reference.test.ts` now passes against a real local `mlr` binary for `cat`, `filter`, `put`, `cut`, `join`, `sort`, `stats1`, `reorder`, and `unsparsify`.
   Remaining verb gaps are `stats2`, `nest`, and `unnest`.
-- 21.15 No hosted deployment, npm package, or worker image evidence yet.
+- 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
+  Direct GHCR package inspection is still blocked by the current token lacking `read:packages`, and npm package evidence is still missing.
 - 21.19 Final qualification blocked on unresolved items above.
 
 Verdict: NOT QUALIFIED
