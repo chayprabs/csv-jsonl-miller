@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: csvshape-worker
+    runtime: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: apps/worker/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: WORKER_ARTIFACT_TTL_SECONDS
+        value: "900"

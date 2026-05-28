@@ -61,7 +61,12 @@ Current qualification note: Lighthouse is green, browser p95 is `377.26 ms` for 
 ## Release targets
 
 - Static web bundle suitable for Cloudflare Pages.
-- Containerized worker suitable for Fly.io or any OCI runtime.
+- Containerized worker suitable for Render, Fly.io, or any OCI runtime.
+
+## Hosted Worker Prep
+
+- Render Blueprint: `render.yaml`
+- Render worker deploy notes: `docs/deploy/RENDER_WORKER.md`
 
 ## License
 

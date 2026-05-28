@@ -43,6 +43,7 @@ Acceptance evidence:
 
 Blocked:
 - 21.0 Hosted web URL now exists and returned `200` at `https://chayprabs.github.io/csv-jsonl-miller/`, and the latest `main` runs for `CI`, `Deploy Pages`, and `Publish Worker Image` all succeeded on commit `8936ed5`.
+  The repo now also contains a Render Blueprint in `render.yaml` and deploy notes in `docs/deploy/RENDER_WORKER.md` for creating a public worker service.
   A hosted worker URL is still not provisioned, so this item remains blocked.
 - 21.1 Browser Miller-WASM integration is still blocked.
   Browser DuckDB-WASM is now exercised by `pnpm --filter @csvshape/web smoke:duckdb`, which runs supported DuckDB-WASM chains over the ecommerce CSV, access-log JSONL, and wide-sales CSV samples and records the results in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
@@ -57,6 +58,7 @@ Blocked:
 - 21.15 Hosted web deployment evidence now exists through GitHub Pages, and the worker image publish workflow is green on `main`.
   Worker image publish run `26606207452` succeeded on `main`, and release run `26607199483` succeeded on `main` with uploaded artifact `csvshape-core-pack-check` (`sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`).
   `@csvshape/core` is now package-ready with `dist` exports and a repeatable `pnpm --filter @csvshape/core pack:check` tarball build recorded in `docs/qc/benchmarks/core-pack.json`.
+  The repo now includes `render.yaml` and `docs/deploy/RENDER_WORKER.md` for a Git-backed Render worker deployment path.
   Public registry publication evidence is still missing because this machine is not authenticated to npm and the GitHub token still lacks `read:packages`.
   A hosted worker endpoint is still missing, so deployment evidence is still incomplete.
 - 21.19 Final qualification blocked on unresolved items above.

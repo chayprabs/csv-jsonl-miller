@@ -33,6 +33,7 @@ It is not yet a qualified release record.
 - [ ] 21.0 Hosted URL and worker deployment evidence.
   The static app is now hosted at `https://chayprabs.github.io/csv-jsonl-miller/`, and a direct HTTP check returned `200`.
   GitHub Actions on `main` now show green `CI`, `Deploy Pages`, and `Publish Worker Image` runs for commit `8936ed5`.
+  The repo now also includes a Render Blueprint in `render.yaml` plus deploy notes in `docs/deploy/RENDER_WORKER.md` for a public worker URL.
   A hosted worker URL is still missing, so this gate is not fully closed yet.
 - [ ] 21.1 Real Miller-WASM, DuckDB-WASM, native Miller, and native DuckDB integration evidence.
   Browser DuckDB-WASM is exercised locally across the acceptance samples via `pnpm --filter @csvshape/web smoke:duckdb`, with artifact output in `docs/qc/benchmarks/browser-duckdb-smoke.json`.
@@ -51,6 +52,7 @@ It is not yet a qualified release record.
 - [ ] 21.15 Hosted deployment, npm package, and worker image evidence.
   Pages deployment is live on GitHub Pages, the worker image publish workflow is green on `main` for run `26606207452` (`e70ac1e`), and the release workflow is green on run `26607199483` (`3239815`) with uploaded artifact `csvshape-core-pack-check`.
   `@csvshape/core` is now package-ready with `dist` exports plus a repeatable `pnpm --filter @csvshape/core pack:check` tarball build, recorded in `docs/qc/benchmarks/core-pack.json`, and the latest release workflow artifact digest is `sha256:34403cb8f9dc20469bdc7af2fb0666304bdc0b53f05e43fa7df679f2d77ca64b`.
+  The worker now has repo-owned Render deployment config in `render.yaml`, but there is still no applied hosted worker instance.
   There is still no registry publication evidence from npm or GitHub Packages.
   Direct container package inspection is still blocked by the current token missing `read:packages`, and there is still no hosted worker endpoint.
 - [ ] 21.19 Final all-green verdict.
