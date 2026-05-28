@@ -711,6 +711,11 @@ export function App() {
       <header className="topbar">
         <div className="hero-copy">
           <p className="eyebrow">CSVShape</p>
+          <div className="brand-pills" aria-label="Product highlights">
+            <span className="brand-pill">Browser-first ETL</span>
+            <span className="brand-pill">12 Miller verbs</span>
+            <span className="brand-pill">Replayable chains</span>
+          </div>
           <h1>{routeSeo.heading}</h1>
           <p className="hero-lead">
             Shape CSV, TSV, NDJSON, and JSONL with a browser-first workflow that stays fast for
@@ -740,6 +745,13 @@ export function App() {
               escalation are all available from the same workspace.
             </p>
           </div>
+          <button
+            type="button"
+            className="secondary-button hero-button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Load files
+          </button>
           <a
             className="github-link"
             href="https://github.com/chayprabs/csv-jsonl-miller"
@@ -752,12 +764,29 @@ export function App() {
       </header>
 
       <main>
+        <nav className="workspace-nav" aria-label="Workspace sections">
+          <a href="#inputs-panel" className="workspace-link">
+            Inputs
+          </a>
+          <a href="#chain-panel" className="workspace-link">
+            Chain editor
+          </a>
+          <a href="#preview-panel" className="workspace-link">
+            Result preview
+          </a>
+          <a href="#log-panel" className="workspace-link">
+            Row log
+          </a>
+        </nav>
         <section className="hero-grid">
-          <div className="panel">
+          <div className="panel" id="inputs-panel">
           <div className="panel-header">
             <FileCog size={18} />
             <h2>Inputs</h2>
           </div>
+          <p className="panel-lede">
+            Bring in files, sample datasets, or remote worker URLs without leaving the workspace.
+          </p>
           <div
             className="dropzone"
             onDragOver={(event) => event.preventDefault()}
@@ -854,7 +883,7 @@ export function App() {
                 onClick={() => setSelectedSourceId(source.id)}
               >
                 <strong>{source.name}</strong>
-                <span>{`${source.sourceType} · ${source.format.toUpperCase()}`}</span>
+                <span>{`${source.sourceType} / ${source.format.toUpperCase()}`}</span>
               </button>
             ))}
           </div>
@@ -985,12 +1014,12 @@ export function App() {
           </div>
         </div>
 
-          <div className="panel">
+          <div className="panel" id="chain-panel">
           <div className="panel-header">
             <Rows4 size={18} />
             <h2>Chain editor</h2>
           </div>
-          <p>Add verbs from the palette, reorder them, and switch each step between form and raw modes.</p>
+          <p className="panel-lede">Add verbs from the palette, reorder them, and switch each step between form and raw modes.</p>
           <div className="verb-grid">
             {VERB_PALETTE.map((verb) => (
               <button key={verb} type="button" className="verb-chip" onClick={() => addVerb(verb)}>
@@ -1103,11 +1132,12 @@ export function App() {
           </div>
         </div>
 
-          <div className="panel">
+          <div className="panel" id="preview-panel">
           <div className="panel-header">
             <Database size={18} />
             <h2>Result preview</h2>
           </div>
+          <p className="panel-lede">Review engine selection, inferred dialect, and export-ready output in one place.</p>
           {!selectedSource ? (
             <div className="preview-state">
               {isLoading ? 'Loading source...' : 'Load a source to inspect preview data.'}
@@ -1257,7 +1287,7 @@ export function App() {
         </div>
         </section>
 
-        <section className="log-panel">
+        <section className="log-panel" id="log-panel">
           <div className="panel-header">
             <Logs size={18} />
             <h2>Row error log</h2>
