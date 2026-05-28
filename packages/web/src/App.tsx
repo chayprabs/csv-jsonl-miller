@@ -704,13 +704,46 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div>
+        <div className="hero-copy">
           <p className="eyebrow">CSVShape</p>
           <h1>{routeSeo.heading}</h1>
+          <p className="hero-lead">
+            Shape CSV, TSV, NDJSON, and JSONL with a browser-first workflow that stays fast for
+            preview work and escalates large jobs to the native worker only when it has to.
+          </p>
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <span>Verbs</span>
+              <strong>{VERB_PALETTE.length} Miller-style steps</strong>
+            </div>
+            <div className="hero-stat">
+              <span>Engines</span>
+              <strong>DuckDB-WASM, TypeScript, native worker</strong>
+            </div>
+            <div className="hero-stat">
+              <span>Release gate</span>
+              <strong>100k-row browser p95 at 377 ms locally</strong>
+            </div>
+          </div>
         </div>
-        <a href="https://github.com/chayprabs/csv-jsonl-miller" target="_blank" rel="noreferrer">
-          GitHub
-        </a>
+        <div className="hero-meta">
+          <div className="hero-note">
+            <span>Current session</span>
+            <strong>{sources.length} loaded source{sources.length === 1 ? '' : 's'}</strong>
+            <p>
+              Replay URLs, chain scripts, CSV and Parquet export, JSONL jq filters, and worker
+              escalation are all available from the same workspace.
+            </p>
+          </div>
+          <a
+            className="github-link"
+            href="https://github.com/chayprabs/csv-jsonl-miller"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View on GitHub
+          </a>
+        </div>
       </header>
 
       <main>
