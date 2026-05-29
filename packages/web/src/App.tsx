@@ -570,6 +570,14 @@ export function App() {
   const previewColumns = reshaped?.preview.columns ?? duckDbExecution?.preview.columns ?? execution?.preview.columns ?? [];
   const previewWarnings = reshaped?.warnings ?? duckDbExecution?.warnings ?? execution?.warnings ?? [];
   const exportRows = reshaped?.rows ?? duckDbExecution?.rows ?? execution?.rows ?? [];
+  const activeEngineLabel = executionEngine === 'duckdb-wasm' ? 'DuckDB-WASM' : 'TypeScript';
+  const selectedSourceSummary = selectedSource
+    ? `${selectedSource.name} · ${selectedSource.format.toUpperCase()}`
+    : 'No source selected yet';
+  const warningSummary =
+    previewWarnings.length === 0
+      ? 'No row warnings'
+      : `${previewWarnings.length} row warning${previewWarnings.length === 1 ? '' : 's'}`;
 
   const chainDefinition = useMemo<VerbChain>(
     () => ({
@@ -737,35 +745,69 @@ export function App() {
               <strong>100k-row browser p95 at 377 ms locally</strong>
             </div>
           </div>
+          <div className="hero-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Load files
+            </button>
+            <a
+              className="github-link"
+              href="https://github.com/chayprabs/csv-jsonl-miller"
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on GitHub
+            </a>
+          </div>
         </div>
         <div className="hero-meta">
-          <div className="hero-note">
+          <div className="hero-note primary-note">
             <span>Current session</span>
-            <strong>{sources.length} loaded source{sources.length === 1 ? '' : 's'}</strong>
+            <strong>{selectedSourceSummary}</strong>
             <p>
-              Replay URLs, chain scripts, CSV and Parquet export, JSONL jq filters, and worker
-              escalation are all available from the same workspace.
+              {sources.length} loaded source{sources.length === 1 ? '' : 's'}, {chain.length}{' '}
+              configured step{chain.length === 1 ? '' : 's'}, and {warningSummary.toLowerCase()} in
+              the active preview.
             </p>
           </div>
-          <button
-            type="button"
-            className="secondary-button hero-button"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Load files
-          </button>
-          <a
-            className="github-link"
-            href="https://github.com/chayprabs/csv-jsonl-miller"
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on GitHub
-          </a>
+          <div className="hero-note-grid">
+            <div className="hero-note">
+              <span>Ready now</span>
+              <strong>Replay URLs and chain scripts</strong>
+              <p>Keep a transform URL-friendly, or export it as a replayable command script.</p>
+            </div>
+            <div className="hero-note">
+              <span>Fallback path</span>
+              <strong>Native worker only when needed</strong>
+              <p>Large files stay out of the browser path and queue against the worker explicitly.</p>
+            </div>
+          </div>
         </div>
       </header>
 
       <main>
+        <section className="status-strip" aria-label="Workspace status">
+          <div className="status-card">
+            <span>Selected source</span>
+            <strong>{selectedSourceSummary}</strong>
+          </div>
+          <div className="status-card">
+            <span>Chain</span>
+            <strong>{chain.length === 0 ? 'No steps yet' : `${chain.length} step${chain.length === 1 ? '' : 's'}`}</strong>
+          </div>
+          <div className="status-card">
+            <span>Preview engine</span>
+            <strong>{activeEngineLabel}</strong>
+          </div>
+          <div className="status-card">
+            <span>Preview health</span>
+            <strong>{warningSummary}</strong>
+          </div>
+        </section>
+
         <nav className="workspace-nav" aria-label="Workspace sections">
           <a href="#inputs-panel" className="workspace-link">
             Inputs
@@ -780,8 +822,8 @@ export function App() {
             Row log
           </a>
         </nav>
-        <section className="hero-grid">
-          <div className="panel" id="inputs-panel">
+        <section className="workspace-grid">
+          <div className="panel panel-inputs" id="inputs-panel">
           <div className="panel-header">
             <FileCog size={18} />
             <h2>Inputs</h2>
@@ -789,6 +831,16 @@ export function App() {
           <p className="panel-lede">
             Bring in files, sample datasets, or remote worker URLs without leaving the workspace.
           </p>
+          <div className="panel-toolbar">
+            <div className="toolbar-pill">
+              <span>Loaded</span>
+              <strong>{sources.length}</strong>
+            </div>
+            <div className="toolbar-pill">
+              <span>Samples</span>
+              <strong>{SAMPLE_SPECS.length} ready</strong>
+            </div>
+          </div>
           <div
             className="dropzone"
             onDragOver={(event) => event.preventDefault()}
@@ -861,6 +913,13 @@ export function App() {
             {workerMessage ? <p className="worker-message">{workerMessage}</p> : null}
           </div>
 
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">Library</span>
+              <h3>Sample datasets</h3>
+            </div>
+            <strong>{SAMPLE_SPECS.length} fixtures</strong>
+          </div>
           <div className="sample-actions">
             {SAMPLE_SPECS.map((sample) => (
               <button
@@ -875,6 +934,13 @@ export function App() {
             ))}
           </div>
 
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">Workspace</span>
+              <h3>Loaded sources</h3>
+            </div>
+            <strong>{sources.length === 0 ? 'Empty' : `${sources.length} active`}</strong>
+          </div>
           <div className="source-list">
             {sources.length === 0 ? <p>No sources loaded yet.</p> : null}
             {sources.map((source) => (
@@ -1019,12 +1085,32 @@ export function App() {
           </div>
         </div>
 
-          <div className="panel" id="chain-panel">
+          <div className="panel panel-chain" id="chain-panel">
           <div className="panel-header">
             <Rows4 size={18} />
             <h2>Chain editor</h2>
           </div>
-          <p className="panel-lede">Add verbs from the palette, reorder them, and switch each step between form and raw modes.</p>
+          <p className="panel-lede">
+            Add verbs from the palette, reorder them, and switch each step between form and raw
+            modes.
+          </p>
+          <div className="panel-toolbar">
+            <div className="toolbar-pill">
+              <span>Active source</span>
+              <strong>{selectedSource ? selectedSource.name : 'Choose a file or sample'}</strong>
+            </div>
+            <div className="toolbar-pill">
+              <span>Configured chain</span>
+              <strong>{chain.length === 0 ? 'Start with a verb' : `${chain.length} step${chain.length === 1 ? '' : 's'}`}</strong>
+            </div>
+          </div>
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">Palette</span>
+              <h3>Available verbs</h3>
+            </div>
+            <strong>{VERB_PALETTE.length} total</strong>
+          </div>
           <div className="verb-grid">
             {VERB_PALETTE.map((verb) => (
               <button key={verb} type="button" className="verb-chip" onClick={() => addVerb(verb)}>
@@ -1033,6 +1119,13 @@ export function App() {
             ))}
           </div>
 
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">Pipeline</span>
+              <h3>Chain steps</h3>
+            </div>
+            <strong>Drag to reorder</strong>
+          </div>
           <div className="chain-stack">
             {chain.length === 0 ? <div className="preview-state compact">No verbs in the chain yet.</div> : null}
             {chain.map((step, index) => {
@@ -1140,18 +1233,35 @@ export function App() {
           </div>
         </div>
 
-          <div className="panel" id="preview-panel">
+          <div className="panel panel-preview" id="preview-panel">
           <div className="panel-header">
             <Database size={18} />
             <h2>Result preview</h2>
           </div>
-          <p className="panel-lede">Review engine selection, inferred dialect, and export-ready output in one place.</p>
+          <p className="panel-lede">
+            Review engine selection, inferred dialect, and export-ready output in one place.
+          </p>
           {!selectedSource ? (
             <div className="preview-state">
               {isLoading ? 'Loading source...' : 'Load a source to inspect preview data.'}
             </div>
           ) : (
             <div className="preview-stack">
+              <div className="panel-toolbar">
+                <div className="toolbar-pill">
+                  <span>Source</span>
+                  <strong>{selectedSource.name}</strong>
+                </div>
+                <div className="toolbar-pill">
+                  <span>Engine</span>
+                  <strong>{activeEngineLabel}</strong>
+                </div>
+                <div className="toolbar-pill">
+                  <span>Rows in output</span>
+                  <strong>{exportRows.length}</strong>
+                </div>
+              </div>
+
               <div className="metadata-grid">
                 <div>
                   <span>Format</span>
@@ -1175,12 +1285,12 @@ export function App() {
                 </div>
                 <div>
                   <span>Engine</span>
-                  <strong>{executionEngine === 'duckdb-wasm' ? 'DuckDB-WASM' : 'TypeScript'}</strong>
+                  <strong>{activeEngineLabel}</strong>
                 </div>
               </div>
               {engineMessage ? <p className="worker-message">{engineMessage}</p> : null}
 
-              <div className="dialect-controls">
+              <div className="preview-actions">
                 <label className="field inline-field">
                   <span>Engine mode</span>
                   <select
